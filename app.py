@@ -202,7 +202,6 @@ with tab2:
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
-                        # Extract expertise and cleanly remove any accidental trailing name strings
                         expertise_match = re.search(r"lab’s work on (.*?)\. My background", email_body, re.DOTALL)
                         if expertise_match:
                             expertise = clean_pdf_text(expertise_match.group(1))
@@ -210,7 +209,6 @@ with tab2:
                             subj = clean_pdf_text(str(row.get("Email Subject", "")))
                             expertise = subj.split(":")[1].split("—")[0].strip() if ":" in subj else "Geospatial Modeling & Remote Sensing"
                             
-                        # Clean up expertise to remove any "- Faizan Ahmad" suffix
                         expertise = re.sub(r'\s*[-–—]\s*Faizan.*$', '', expertise, flags=re.IGNORECASE).strip()
                             
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
@@ -228,7 +226,7 @@ with tab2:
                         pdf.set_font("Helvetica", size=9)
                         pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, f"Mob: {FAIZAN_CV_DETAILS['phone']} | Email: {FAIZAN_CV_DETAILS['email']}", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, f"{FAIZ_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(4)
                         
                         pdf.set_font("Helvetica", style="B", size=10)
