@@ -21,7 +21,14 @@ FAIZAN_CV_DETAILS = {
 
 tab1, tab2 = st.tabs(["📧 1. Extract Faculty & Download Excel", "📄 2. Upload Excel & Generate Research Statements (ZIP)"])
 
-ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head", "dr", "ph.d"]
+def clean_pdf_text(text):
+    if not isinstance(text, str):
+        return ""
+    # Replace unsupported unicode quotes and dashes with standard ones
+    return (text.replace('“', '"').replace('”', '"')
+                .replace('‘', "'").replace('’', "'")
+                .replace('—', '-').replace('–', '-')
+                .encode('latin-1', 'replace').decode('latin-1'))
 
 def scrape_url_smartly(url):
     try:
@@ -31,12 +38,9 @@ def scrape_url_smartly(url):
             return None
             
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Remove unwanted script/style tags
         for script in soup(["script", "style", "nav", "footer"]):
             script.extract()
             
-        # 1. Extract Email Address (Look for mailto links first, then regex in text)
         email = ""
         mailto_tag = soup.find(href=re.compile(r"^mailto:"))
         if mailto_tag:
@@ -50,18 +54,16 @@ def scrape_url_smartly(url):
             else:
                 email = "contact@university.edu"
                 
-        # 2. Extract Name (Check page title or main heading h1/h2)
         name = ""
         for h in soup.find_all(['h1', 'h2']):
             text = h.get_text().strip()
             if len(text.split()) in [2, 3, 4] and not any(char.isdigit() for char in text):
-                if not any(w in text.lower() for w in ["home", "department", "faculty", "welcome", "research", "university", "ut dallas"]):
+                if not any(w in text.lower() for w in ["home", "department", "faculty", "welcome", "research", "university"]):
                     name = text.replace("Dr.", "").replace("Prof.", "").strip()
                     break
                     
         if not name and soup.title:
             title_text = soup.title.get_text().strip()
-            # Clean title text to find name
             clean_title = re.split(r'[-|:]', title_text)[0].strip()
             if len(clean_title.split()) in [2, 3]:
                 name = clean_title.replace("Dr.", "").replace("Prof.", "").strip()
@@ -69,7 +71,6 @@ def scrape_url_smartly(url):
         if not name:
             name = "Faculty Member"
             
-        # 3. Extract Expertise / Research Area
         expertise = "Geospatial modeling and remote sensing"
         meta_desc = soup.find("meta", attrs={"name": "description"})
         if meta_desc and meta_desc.get("content"):
@@ -83,9 +84,9 @@ def scrape_url_smartly(url):
                         break
                         
         return {
-            "name": name,
-            "email": email,
-            "expertise": expertise
+            "name": clean_pdf_text(name),
+            "email": clean_pdf_text(email),
+            "expertise": clean_pdf_text(expertise)
         }
     except Exception as e:
         return None
@@ -106,17 +107,14 @@ with tab1:
         
         if urls_input.strip():
             raw_urls = [u.strip() for u in re.split(r'[\n,\s]+', urls_input) if u.strip()]
-            
             extracted_profs = []
             for url in raw_urls:
                 if not url.startswith(('http://', 'https://')):
                     url = 'https://' + url
-                    
                 prof_data = scrape_url_smartly(url)
                 if prof_data:
                     extracted_profs.append(prof_data)
 
-            # Global deduplication
             seen_global = set()
             for p in extracted_profs:
                 ident = (p['name'].lower(), p['email'].lower())
@@ -127,16 +125,14 @@ with tab1:
             if professors:
                 st.success(f"Successfully processed {len(raw_urls)} URL(s) and extracted {len(professors)} profile(s) accurately!")
             else:
-                st.warning("Could not extract profiles automatically from these links. Please check the URLs or use 'Manual Text Paste'.")
+                st.warning("Could not extract profiles automatically from these links.")
     else:
         prof_input = st.text_area("Faculty Directory Text:", placeholder="Paste copied faculty text here...", height=200)
         if prof_input.strip():
-            # Basic manual parsing fallback
             lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
-            # Quick processing for pasted text
             professors.append({
-                "name": lines[0] if lines else "Professor",
-                "email": next((l for l in lines if "@" in l), "prof@uni.ca"),
+                "name": clean_pdf_text(lines[0] if lines else "Professor"),
+                "email": clean_pdf_text(next((l for l in lines if "@" in l), "prof@uni.ca")),
                 "expertise": "Geospatial modeling and remote sensing"
             })
             if professors:
@@ -204,14 +200,14 @@ with tab2:
                 
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     for idx, row in df_uploaded.iterrows():
-                        prof_name = str(row.get("Name", f"Professor_{idx+1}")).strip()
-                        email_body = str(row.get("Email Body", ""))
+                        prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
+                        email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
                         expertise_match = re.search(r"lab’s work on (.*?)\. My background", email_body, re.DOTALL)
                         if expertise_match:
-                            expertise = expertise_match.group(1).strip()
+                            expertise = clean_pdf_text(expertise_match.group(1))
                         else:
-                            subj = str(row.get("Email Subject", ""))
+                            subj = clean_pdf_text(str(row.get("Email Subject", "")))
                             expertise = subj.split(":")[1].split("—")[0].strip() if ":" in subj else "Geospatial Modeling & Remote Sensing"
                             
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
@@ -221,7 +217,6 @@ with tab2:
                         pdf.add_page()
                         pdf.set_auto_page_break(auto=True, margin=15)
                         
-                        # PDF Header
                         pdf.set_font("Helvetica", style="B", size=13)
                         pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                         
@@ -233,33 +228,28 @@ with tab2:
                         pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(4)
                         
-                        # Research Focus
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, f"Research Focus: Spatiotemporal Modeling, Remote Sensing, and {expertise.split(',')[0]}", new_x="LMARGIN", new_y="NEXT")
                         pdf.ln(3)
                         
-                        # Section 1
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "1. Academic & Professional Background", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 4, "I hold a Master of Science in Remote Sensing & GIS and a Bachelor of Science in Geoinformatics, complemented by over 5.5 years of professional experience as a GIS Specialist. My core expertise lies in spatiotemporal data analysis, automated geospatial workflows in Python, and cloud-based Earth Observation analytics using Google Earth Engine (GEE). My research capability is demonstrated by a peer-reviewed publication in the Journal for Nature Conservation (Elsevier, 2026), where I utilized spatial statistical modeling to evaluate land dynamics and ecological responses.")
                         pdf.ln(3)
                         
-                        # Section 2
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "2. My Research Focus", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 4, f"My research focus centers on utilizing satellite remote sensing, spatial statistics, and machine learning to model environmental risks and ecosystem dynamics. I am particularly drawn to the research conducted in {prof_name}'s lab focusing on {expertise}. Your pioneering work directly aligns with my analytical background and research ambitions. I am keen to leverage cloud-based Earth Observation and automated geospatial analytics to advance spatial risk mapping and predictive modeling.")
                         pdf.ln(3)
                         
-                        # Section 3
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 4, "During my doctoral studies, I aim to contribute to your lab's directions by focusing on:\n1. Spatiotemporal Risk Modeling: Integrating multi-decadal satellite observation time-series with spatial datasets.\n2. Automated Landscape Analytics: Developing Python and GEE-driven workflows for automated mapping and spatial analysis.\n3. Machine Learning & Predictive Risk Assessment: Applying advanced spatial statistics and machine learning algorithms to model environmental interactions.")
                         pdf.ln(3)
                         
-                        # Section 4
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "4. Conclusion", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
