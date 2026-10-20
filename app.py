@@ -6,7 +6,7 @@ from fpdf import FPDF
 import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan website se copy kiya hua data paste karein. Script khud-ba-khud saare gaps aur spaces ko manage kar legi!")
+st.write("Paste raw faculty profile blocks directly copied from university websites below. The app will automatically clean spaces, filter targeted roles (Professors, Chairs, Heads), and generate custom emails and Statements of Research Interests.")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -18,74 +18,65 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-default_text = """Randall Scharien
-Associate professor
-Geography
-Accepting graduate students
-Office: DTB B122
-randy@uvic.ca
-250-853-3577
-Area(s) of expertise: Remote sensing, cryosphere with specialization in Arctic sea ice
-
-Ji Won Suh
-Assistant professor
-Geography
-Accepting graduate students"""
-
+# Empty text area by default (No pre-filled data)
 prof_input = st.text_area(
-    "Professors Data (Direct copy-paste from website):",
-    value=default_text,
+    "Faculty Directory Data (Paste copied profile blocks here):",
+    value="",
+    placeholder="Paste faculty details here (e.g., copied directly from university directory websites)...",
     height=300
 )
 
-# Allowed Target Titles
+# Allowed Target Academic Titles
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
 
-# Smart Line-by-Line Parser (Independent of blank lines)
-lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
 professors = []
 
-current_prof = None
+if prof_input.strip():
+    lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+    current_prof = None
 
-for line in lines:
-    clean_lower = line.lower()
-    
-    # Check if line is a designation (indicates a professor block)
-    is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
-    
-    if is_title_match:
-        if current_prof:
-            professors.append(current_prof)
-        # The line right before designation is usually the Name
-        prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
-        current_prof = {
-            "name": prev_line.replace("- ", "").strip(),
-            "designation": line,
-            "email": "prof@uni.ca",
-            "expertise": "Geospatial modeling and remote sensing"
-        }
-    elif current_prof:
-        if "@" in line:
-            current_prof["email"] = line
-        elif "expertise:" in clean_lower:
-            current_prof["expertise"] = line.split(":", 1)[1].strip()
-        elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
-            if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
-                current_prof["expertise"] = line
+    for line in lines:
+        clean_lower = line.lower()
+        
+        # Check if line contains a target academic designation
+        is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
+        
+        if is_title_match:
+            if current_prof:
+                professors.append(current_prof)
+            
+            # The line immediately preceding the designation is taken as the Professor Name
+            prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
+            current_prof = {
+                "name": prev_line.replace("- ", "").strip(),
+                "designation": line,
+                "email": "prof@uni.ca",
+                "expertise": "Geospatial modeling and remote sensing"
+            }
+        elif current_prof:
+            if "@" in line:
+                current_prof["email"] = line
+            elif "expertise:" in clean_lower:
+                current_prof["expertise"] = line.split(":", 1)[1].strip()
+            elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
+                if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
+                    current_prof["expertise"] = line
 
-if current_prof:
-    professors.append(current_prof)
+    if current_prof:
+        professors.append(current_prof)
 
 col1, col2 = st.columns(2)
 
-# Button 1: Emails Word File
+# Button 1: Download Word Emails File
 with col1:
     if st.button("📥 Download Emails Word File"):
-        if not professors:
-            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam data check karein.")
+        if not prof_input.strip():
+            st.error("Please paste faculty details in the text box above.")
+        elif not professors:
+            st.error("No matching Professors, Assistant/Associate Professors, Chairs, or Department Heads were found. Please verify the input data.")
         else:
             doc = Document()
-            doc.add_heading("Targeted Professors Cold Emails", 0)
+            doc.add_heading("Targeted Faculty Cold Emails", 0)
             
             for idx, prof in enumerate(professors, 1):
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
@@ -123,7 +114,7 @@ with col1:
             doc.save(buffer)
             buffer.seek(0)
             
-            st.success(f"Kul {len(professors)} targeted professors ki emails tayyar hain!")
+            st.success(f"Successfully generated cold emails for {len(professors)} targeted faculty member(s)!")
             st.download_button(
                 label="Download .docx File",
                 data=buffer,
@@ -131,11 +122,13 @@ with col1:
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
 
-# Button 2: Research Interest PDFs (ZIP)
+# Button 2: Download Research Statements ZIP File
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
-        if not professors:
-            st.error("Koi bhi matching Professor/Chair/Head nahi mila.")
+        if not prof_input.strip():
+            st.error("Please paste faculty details in the text box above.")
+        elif not professors:
+            st.error("No matching Professors, Assistant/Associate Professors, Chairs, or Department Heads were found.")
         else:
             zip_buffer = io.BytesIO()
             
@@ -152,7 +145,7 @@ with col2:
                     pdf.set_font("Helvetica", style="B", size=13)
                     pdf.cell(0, 7, text="STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                     
-                    # Contact Info
+                    # Contact Info Header
                     pdf.set_font("Helvetica", style="B", size=10)
                     pdf.cell(0, 5, text="Faizan Ahmad", new_x="LMARGIN", new_y="NEXT", align="C")
                     pdf.set_font("Helvetica", size=9)
@@ -197,7 +190,7 @@ with col2:
                     zip_file.writestr(file_name, pdf_bytes)
                     
             zip_buffer.seek(0)
-            st.success(f"Kul {len(professors)} targeted professors ki Research Statements ka ZIP folder tayyar hai!")
+            st.success(f"Successfully generated a ZIP archive containing Statements of Research Interests for {len(professors)} faculty member(s)!")
             st.download_button(
                 label="Download ZIP File",
                 data=zip_buffer,
