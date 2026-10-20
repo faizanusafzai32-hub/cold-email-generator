@@ -226,14 +226,14 @@ with tab2:
                         pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                         
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "Faizan Ahmad", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 5, FAIZAN_CV_DETAILS["name"], new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.set_font("Helvetica", size=9)
                         pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, f"Mob: {FAIZAN_CV_DETAILS['phone']} | Email: {FAIZAN_CV_DETAILS['email']}", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, f"{FAIZ_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
                         
-                        # Research Focus (Using multi_cell to prevent margin overflow)
+                        # Research Focus
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.multi_cell(0, 4, f"Research Focus: Advanced Spatiotemporal Modeling, Remote Sensing Analytics, and {expertise}", align="L")
                         pdf.ln(2)
