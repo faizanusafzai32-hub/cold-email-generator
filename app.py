@@ -18,8 +18,8 @@ FAIZAN_CV_DETAILS = {
 }
 
 prof_input = st.text_area(
-    "Professors ki details yahan paste karein:",
-    value="Dr. Jen Beverly | Professor | jbeverly@ualberta.ca | Wildfire risk assessment, fire-climate interactions, and landscape values-at-risk mapping"
+    "Professors ki details yahan paste karein (Name | Designation | Email | Expertise):",
+    value="Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling, human-environment interactions"
 )
 
 raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
@@ -28,18 +28,27 @@ professors = []
 for line in raw_lines:
     if '|' in line:
         parts = [p.strip() for p in line.split('|')]
-        name = parts[0] if len(parts) > 0 else "Dr. Professor"
-        designation = parts[1] if len(parts) > 1 else "Professor"
-        email = parts[2] if len(parts) > 2 else "prof@uni.ca"
-        expertise = parts[3] if len(parts) > 3 else "Geospatial modeling and remote sensing"
+        name = parts[0] if len(parts) > 0 and parts[0] else "Professor"
+        designation = parts[1] if len(parts) > 1 and parts[1] else "Professor"
+        email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
+        expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
         professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
+    else:
+        # Agar koi simple line bhi ho toh usko name maan lein taake "Dr. Professor" na aaye
+        if len(line) > 3 and not line.startswith("http"):
+            professors.append({
+                "name": line,
+                "designation": "Professor",
+                "email": "prof@uni.ca",
+                "expertise": "Geospatial technologies and remote sensing"
+            })
 
-if not professors and raw_lines:
+if not professors:
     professors.append({
-        "name": "Dr. Professor",
-        "designation": "Professor",
-        "email": "prof@uni.ca",
-        "expertise": "Geospatial technologies and remote sensing"
+        "name": "Dr. Chris Bone",
+        "designation": "Associate Professor",
+        "email": "chrisbone@uvic.ca",
+        "expertise": "Geospatial technologies, spatial simulation modelling"
     })
 
 col1, col2 = st.columns(2)
@@ -94,7 +103,7 @@ with col1:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-# Button 2: Research Interest PDFs (ZIP) - Custom Naming
+# Button 2: Research Interest PDFs (ZIP) - Custom Naming & Proper Professor Name
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         zip_buffer = io.BytesIO()
@@ -102,7 +111,7 @@ with col2:
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for idx, prof in enumerate(professors, 1):
                 clean_prof_name = prof['name'].replace("Dr. ", "").replace(".", "").strip()
-                file_name = f"Faizan-PHD-Statement of research - {clean_prof_name}.pdf"
+                file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                 
                 pdf = FPDF()
                 pdf.add_page()
