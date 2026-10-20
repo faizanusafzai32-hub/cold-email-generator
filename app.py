@@ -1,5 +1,5 @@
 import streamlit as st
-from docx import Document
+import pandas as pd
 import io
 import zipfile
 from fpdf import FPDF
@@ -25,6 +25,7 @@ input_method = st.radio("Select Input Method:", ["🔗 URL Link (Web Scraping)",
 
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
 professors = []
+source_link_used = ""
 
 if input_method == "🔗 URL Link (Web Scraping)":
     faculty_url = st.text_input(
@@ -32,6 +33,7 @@ if input_method == "🔗 URL Link (Web Scraping)":
         value="",
         placeholder="https://www.uvic.ca/geography/people/faculty/index.php"
     )
+    source_link_used = faculty_url
     
     if faculty_url.strip():
         try:
@@ -98,6 +100,7 @@ else:
         placeholder="Paste copied faculty text here...",
         height=250
     )
+    source_link_used = "Manual Text Paste"
     
     if prof_input.strip():
         lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
@@ -137,15 +140,13 @@ else:
 
 col1, col2 = st.columns(2)
 
-# Button 1: Download Word Emails File
+# Button 1: Download Emails Excel File
 with col1:
-    if st.button("📥 Download Emails Word File"):
+    if st.button("📥 Download Emails Excel File"):
         if not professors:
             st.error("No faculty data available. Please provide a valid link or paste text.")
         else:
-            doc = Document()
-            doc.add_heading("Targeted Faculty Cold Emails", 0)
-            
+            excel_data = []
             for idx, prof in enumerate(professors, 1):
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
@@ -153,41 +154,41 @@ with col1:
                 topic = prof['expertise'].split(',')[0].title()
                 subject = f"Prospective PhD Student: {topic} — Faizan Ahmad"
                 
-                doc.add_heading(f"{idx}. {prof['name']} ({prof['designation']})", level=2)
-                doc.add_paragraph(f"Email: {prof['email']}")
-                doc.add_paragraph(f"Email Subject: {subject}")
+                email_body = (
+                    f"Dear Dr. {last_name},\n\n"
+                    f"I hope you are doing well.\n\n"
+                    f"My name is {FAIZAN_CV_DETAILS['name']}, and I hold an {FAIZAN_CV_DETAILS['degree']} with {FAIZAN_CV_DETAILS['exp']}. I also {FAIZAN_CV_DETAILS['pub']}.\n\n"
+                    f"I am very interested in your lab’s work on {prof['expertise']}. My background in processing big spatiotemporal datasets, spatial statistical modeling, Python workflows, and Google Earth Engine (GEE) aligns strongly with your current research focus.\n\n"
+                    f"Are you currently accepting funded PhD students for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
+                    f"With Kind Regards,\n"
+                    f"Faizan Ahmad\n"
+                    f"GIS Specialist\n"
+                    f"WhatsApp/Mob: {FAIZAN_CV_DETAILS['phone']}\n"
+                    f"{FAIZAN_CV_DETAILS['linkedin']}"
+                )
                 
-                p = doc.add_paragraph("Email Body:\n")
-                run_salutation = p.add_run(f"Dear Dr. {last_name},\n\n")
-                run_salutation.bold = True
-                
-                p.add_run("I hope you are doing well.\n\n")
-                p.add_run(f"My name is {FAIZAN_CV_DETAILS['name']}, and I hold an {FAIZAN_CV_DETAILS['degree']} with {FAIZAN_CV_DETAILS['exp']}. I also {FAIZAN_CV_DETAILS['pub']}.\n\n")
-                
-                p.add_run("I am very interested in your lab’s work on ")
-                run_exp = p.add_run(f"{prof['expertise']}")
-                run_exp.bold = True
-                p.add_run(". My background in processing big spatiotemporal datasets, spatial statistical modeling, Python workflows, and Google Earth Engine (GEE) aligns strongly with your current research focus.\n\n")
-                
-                p.add_run("Are you currently accepting funded PhD students for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n")
-                
-                p.add_run("With Kind Regards,\n")
-                p.add_run("Faizan Ahmad\n")
-                p.add_run("GIS Specialist\n")
-                p.add_run(f"WhatsApp/Mob: {FAIZAN_CV_DETAILS['phone']}\n")
-                p.add_run(f"{FAIZAN_CV_DETAILS['linkedin']}\n")
-                doc.add_paragraph("-" * 50)
+                excel_data.append({
+                    "Name": prof['name'],
+                    "Source Link": source_link_used,
+                    "Email Address": prof['email'],
+                    "Designation": prof['designation'],
+                    "Expertise": prof['expertise'],
+                    "Email Subject": subject,
+                    "Email Body": email_body
+                })
 
+            df = pd.DataFrame(excel_data)
             buffer = io.BytesIO()
-            doc.save(buffer)
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name="Targeted Emails")
             buffer.seek(0)
             
-            st.success(f"Successfully generated cold emails for {len(professors)} faculty member(s)!")
+            st.success(f"Successfully generated Excel sheet for {len(professors)} faculty member(s)!")
             st.download_button(
-                label="Download .docx File",
+                label="Download .xlsx File",
                 data=buffer,
-                file_name="Tailored_Cold_Emails.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                file_name="Targeted_Faculty_Emails.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
 # Button 2: Download Research Statements ZIP File
