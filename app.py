@@ -3,9 +3,10 @@ from docx import Document
 import io
 import zipfile
 from fpdf import FPDF
+import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan department ka data paste karein. App sirf Professors, Associate/Assistant Professors aur Chairs/Heads ko target karegi!")
+st.write("Yahan department ka text copy-paste karein. App extra spaces/empty lines ko auto-clean karke sirf Professors/Chairs ko target karegi!")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -35,16 +36,19 @@ chrisbone@uvic.ca
 Area(s) of expertise: Geospatial technologies, spatial simulation modelling, human-environment interactions"""
 
 prof_input = st.text_area(
-    "Professors Data (Multi-line blocks):",
+    "Professors Data (Copy-pasted text with any spacing):",
     value=default_text,
     height=300
 )
 
-# Allowed Target Titles Filter
+# Target Titles
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
 
+# Auto-cleanup of extra blank lines & whitespace
+cleaned_text = re.sub(r'\n\s*\n+', '\n\n', prof_input.strip())
+blocks = [b.strip() for b in cleaned_text.split('\n\n') if b.strip()]
+
 professors = []
-blocks = [b.strip() for b in prof_input.split('\n\n') if b.strip()]
 
 for block in blocks:
     lines = [l.strip() for l in block.split('\n') if l.strip()]
@@ -62,7 +66,6 @@ for block in blocks:
         clean_line = line.replace("- ", "").strip()
         clean_lower = clean_line.lower()
         
-        # Check if designation matches target roles
         if any(title in clean_lower for title in ALLOWED_TITLES):
             designation = clean_line
             is_target_role = True
@@ -71,10 +74,9 @@ for block in blocks:
         elif "expertise:" in clean_lower:
             expertise = clean_line.split(":", 1)[1].strip()
         elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis"]):
-            if len(clean_line) > 15 and "office" not in clean_lower and "leave" not in clean_lower:
+            if len(clean_line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
                 expertise = clean_line
                 
-    # Sirf unhi ko add karega jo target roles mein match honge
     if is_target_role:
         professors.append({
             "name": name,
@@ -89,7 +91,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("📥 Download Emails Word File"):
         if not professors:
-            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam theek data paste karein.")
+            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam details paste karein.")
         else:
             doc = Document()
             doc.add_heading("Targeted Professors Cold Emails", 0)
@@ -155,7 +157,7 @@ with col2:
                     pdf.add_page()
                     pdf.set_auto_page_break(auto=True, margin=15)
                     
-                    # Header Title
+                    # Title Header
                     pdf.set_font("Helvetica", style="B", size=13)
                     pdf.cell(0, 7, text="STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                     
