@@ -6,7 +6,7 @@ from fpdf import FPDF
 import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan department ka text copy-paste karein. App extra spaces/empty lines ko auto-clean karke sirf Professors/Chairs ko target karegi!")
+st.write("Yahan website se copy kiya hua data paste karein. Script khud-ba-khud saare gaps aur spaces ko manage kar legi!")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -18,72 +18,63 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-default_text = """David Atkinson
-Status: On leave until January 2027
-Professor
+default_text = """Randall Scharien
+Associate professor
 Geography
-Office: DTB B120
-datkinso@uvic.ca
-250-721-7332
-Area(s) of expertise: Climate, weather and human and natural systems, data analysis, modelling, the Arctic
+Accepting graduate students
+Office: DTB B122
+randy@uvic.ca
+250-853-3577
+Area(s) of expertise: Remote sensing, cryosphere with specialization in Arctic sea ice
 
-Chris Bone
-Associate professor, Department chair
+Ji Won Suh
+Assistant professor
 Geography
-Office: DTB B203c
-chrisbone@uvic.ca
-250-472-5620
-Area(s) of expertise: Geospatial technologies, spatial simulation modelling, human-environment interactions"""
+Accepting graduate students"""
 
 prof_input = st.text_area(
-    "Professors Data (Copy-pasted text with any spacing):",
+    "Professors Data (Direct copy-paste from website):",
     value=default_text,
     height=300
 )
 
-# Target Titles
+# Allowed Target Titles
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
 
-# Auto-cleanup of extra blank lines & whitespace
-cleaned_text = re.sub(r'\n\s*\n+', '\n\n', prof_input.strip())
-blocks = [b.strip() for b in cleaned_text.split('\n\n') if b.strip()]
-
+# Smart Line-by-Line Parser (Independent of blank lines)
+lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
 professors = []
 
-for block in blocks:
-    lines = [l.strip() for l in block.split('\n') if l.strip()]
-    if not lines:
-        continue
+current_prof = None
+
+for line in lines:
+    clean_lower = line.lower()
     
-    name = lines[0].replace("- ", "").strip()
-    designation = ""
-    email = "prof@uni.ca"
-    expertise = "Geospatial modeling and remote sensing"
+    # Check if line is a designation (indicates a professor block)
+    is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
     
-    is_target_role = False
-    
-    for line in lines[1:]:
-        clean_line = line.replace("- ", "").strip()
-        clean_lower = clean_line.lower()
-        
-        if any(title in clean_lower for title in ALLOWED_TITLES):
-            designation = clean_line
-            is_target_role = True
-        elif "@" in clean_line:
-            email = clean_line
+    if is_title_match:
+        if current_prof:
+            professors.append(current_prof)
+        # The line right before designation is usually the Name
+        prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
+        current_prof = {
+            "name": prev_line.replace("- ", "").strip(),
+            "designation": line,
+            "email": "prof@uni.ca",
+            "expertise": "Geospatial modeling and remote sensing"
+        }
+    elif current_prof:
+        if "@" in line:
+            current_prof["email"] = line
         elif "expertise:" in clean_lower:
-            expertise = clean_line.split(":", 1)[1].strip()
-        elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis"]):
-            if len(clean_line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
-                expertise = clean_line
-                
-    if is_target_role:
-        professors.append({
-            "name": name,
-            "designation": designation if designation else "Professor",
-            "email": email,
-            "expertise": expertise
-        })
+            current_prof["expertise"] = line.split(":", 1)[1].strip()
+        elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
+            if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
+                current_prof["expertise"] = line
+
+if current_prof:
+    professors.append(current_prof)
 
 col1, col2 = st.columns(2)
 
@@ -91,7 +82,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("📥 Download Emails Word File"):
         if not professors:
-            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam details paste karein.")
+            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam data check karein.")
         else:
             doc = Document()
             doc.add_heading("Targeted Professors Cold Emails", 0)
