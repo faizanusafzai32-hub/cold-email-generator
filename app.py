@@ -5,7 +5,7 @@ import zipfile
 from fpdf import FPDF
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan university ki website se copy kiya hua multi-line professors ka data paste karein.")
+st.write("Yahan department ka data paste karein. App sirf Professors, Associate/Assistant Professors aur Chairs/Heads ko target karegi!")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -40,9 +40,10 @@ prof_input = st.text_area(
     height=300
 )
 
-# Smart Multi-line Block Parser
+# Allowed Target Titles Filter
+ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
+
 professors = []
-# Blocks are separated by empty lines
 blocks = [b.strip() for b in prof_input.split('\n\n') if b.strip()]
 
 for block in blocks:
@@ -50,30 +51,37 @@ for block in blocks:
     if not lines:
         continue
     
-    # First line is always the professor's name
     name = lines[0].replace("- ", "").strip()
-    designation = "Professor"
+    designation = ""
     email = "prof@uni.ca"
     expertise = "Geospatial modeling and remote sensing"
     
+    is_target_role = False
+    
     for line in lines[1:]:
         clean_line = line.replace("- ", "").strip()
-        if "@" in clean_line:
-            email = clean_line
-        elif any(k in clean_line.lower() for k in ["professor", "chair", "associate", "assistant", "lecturer"]):
+        clean_lower = clean_line.lower()
+        
+        # Check if designation matches target roles
+        if any(title in clean_lower for title in ALLOWED_TITLES):
             designation = clean_line
-        elif "expertise:" in clean_line.lower():
+            is_target_role = True
+        elif "@" in clean_line:
+            email = clean_line
+        elif "expertise:" in clean_lower:
             expertise = clean_line.split(":", 1)[1].strip()
-        elif any(k in clean_line.lower() for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies"]):
-            if len(clean_line) > 15 and "office" not in clean_line.lower():
+        elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis"]):
+            if len(clean_line) > 15 and "office" not in clean_lower and "leave" not in clean_lower:
                 expertise = clean_line
                 
-    professors.append({
-        "name": name,
-        "designation": designation,
-        "email": email,
-        "expertise": expertise
-    })
+    # Sirf unhi ko add karega jo target roles mein match honge
+    if is_target_role:
+        professors.append({
+            "name": name,
+            "designation": designation if designation else "Professor",
+            "email": email,
+            "expertise": expertise
+        })
 
 col1, col2 = st.columns(2)
 
@@ -81,10 +89,10 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("📥 Download Emails Word File"):
         if not professors:
-            st.error("Barah-e-karam theek data darj karein.")
+            st.error("Koi bhi matching Professor/Chair/Head nahi mila. Barah-e-karam theek data paste karein.")
         else:
             doc = Document()
-            doc.add_heading("Professors Cold Emails", 0)
+            doc.add_heading("Targeted Professors Cold Emails", 0)
             
             for idx, prof in enumerate(professors, 1):
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
@@ -122,7 +130,7 @@ with col1:
             doc.save(buffer)
             buffer.seek(0)
             
-            st.success(f"Kul {len(professors)} professors ki emails tayyar hain!")
+            st.success(f"Kul {len(professors)} targeted professors ki emails tayyar hain!")
             st.download_button(
                 label="Download .docx File",
                 data=buffer,
@@ -134,7 +142,7 @@ with col1:
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         if not professors:
-            st.error("Barah-e-karam theek data darj karein.")
+            st.error("Koi bhi matching Professor/Chair/Head nahi mila.")
         else:
             zip_buffer = io.BytesIO()
             
@@ -196,7 +204,7 @@ with col2:
                     zip_file.writestr(file_name, pdf_bytes)
                     
             zip_buffer.seek(0)
-            st.success(f"Kul {len(professors)} professors ki Research Statements ka ZIP folder tayyar hai!")
+            st.success(f"Kul {len(professors)} targeted professors ki Research Statements ka ZIP folder tayyar hai!")
             st.download_button(
                 label="Download ZIP File",
                 data=zip_buffer,
