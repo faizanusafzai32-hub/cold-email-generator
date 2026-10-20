@@ -3,9 +3,10 @@ from docx import Document
 import io
 import zipfile
 from fpdf import FPDF
+import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan professors ki details paste karein (Chahay pipe format ho ya website ka copy-paste block)")
+st.write("Yahan professors ki details paste karein (Har professor ki aik line: Name | Designation | Email | Expertise)")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -18,46 +19,28 @@ FAIZAN_CV_DETAILS = {
 }
 
 prof_input = st.text_area(
-    "Professors ki details yahan paste karein:",
-    value="Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling, human-environment interactions"
+    "Professors ki details yahan paste karein (Format: Name | Designation | Email | Expertise):",
+    value="Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling, human-environment interactions\nDr. David Atkinson | Professor | datkinso@uvic.ca | Climate, weather and human and natural systems, data analysis, modelling, the Arctic",
+    height=200
 )
 
+# Parsing logic: Sirf un lines ko uthayega jisme '|' ho ya valid professor name + email ho
+raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
 professors = []
 
-# Check if input uses pipe format or multi-line blocks
-if "|" in prof_input:
-    raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
-    for line in raw_lines:
-        if '|' in line:
-            parts = [p.strip() for p in line.split('|')]
-            name = parts[0] if len(parts) > 0 and parts[0] else "Professor"
-            designation = parts[1] if len(parts) > 1 and parts[1] else "Professor"
-            email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
-            expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
+for line in raw_lines:
+    if '|' in line:
+        parts = [p.strip() for p in line.split('|')]
+        name = parts[0] if len(parts) > 0 and parts[0] else "Professor"
+        designation = parts[1] if len(parts) > 1 and parts[1] else "Professor"
+        email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
+        expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
+        
+        # Ignores unwanted headers like 'Faculty'
+        if name.lower() not in ["faculty", "geography", "status", "professor"]:
             professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
-else:
-    # Smart block parser for direct website copy-paste
-    blocks = [b.strip() for b in prof_input.split('\n\n') if b.strip()]
-    for block in blocks:
-        lines = [l.strip() for l in block.split('\n') if l.strip()]
-        if not lines:
-            continue
-        
-        name = lines[0]
-        designation = "Professor"
-        email = "prof@uni.ca"
-        expertise = "Geospatial modeling and remote sensing"
-        
-        for line in lines[1:]:
-            if "@" in line:
-                email = line
-            elif any(k in line.lower() for k in ["professor", "chair", "associate", "assistant", "faculty", "lecturer"]):
-                designation = line
-            elif any(k in line.lower() for k in ["expertise", "research", "modelling", "modeling", "remote", "gis", "climate", "spatial", "interaction"]):
-                expertise = line
-                
-        professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
 
+# Fallback default agar paste ghalat ho
 if not professors:
     professors.append({
         "name": "Dr. Chris Bone",
@@ -75,7 +58,7 @@ with col1:
         doc.add_heading("Professors Cold Emails", 0)
         
         for idx, prof in enumerate(professors, 1):
-            full_name = prof['name'].replace("Dr. ", "").strip()
+            full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
             last_name = full_name.split()[-1] if full_name else "Professor"
             
             topic = prof['expertise'].split(',')[0].title()
@@ -118,25 +101,25 @@ with col1:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-# Button 2: Research Interest PDFs (ZIP) - Correct Naming & Proper Professor Name inside PDF
+# Button 2: Research Interest PDFs (ZIP)
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for idx, prof in enumerate(professors, 1):
-                clean_prof_name = prof['name'].replace("Dr. ", "").replace(".", "").strip().replace(" ", "_")
+                clean_prof_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                 file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                 
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_auto_page_break(auto=True, margin=15)
                 
-                # Title
+                # Header Title
                 pdf.set_font("Helvetica", style="B", size=13)
                 pdf.cell(0, 7, text="STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                 
-                # Contact Header
+                # Contact Info
                 pdf.set_font("Helvetica", style="B", size=10)
                 pdf.cell(0, 5, text="Faizan Ahmad", new_x="LMARGIN", new_y="NEXT", align="C")
                 pdf.set_font("Helvetica", size=9)
