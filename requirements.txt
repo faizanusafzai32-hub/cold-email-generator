@@ -1,5 +1,6 @@
 streamlit
-python-docx
+pandas
+openpyxl
 fpdf2
 requests
 beautifulsoup4
