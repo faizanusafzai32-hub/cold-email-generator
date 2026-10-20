@@ -4,7 +4,7 @@ import io
 import zipfile
 from fpdf import FPDF
 import requests
-from bs4AndWait import BeautifulSoup if False else __import__('bs4').BeautifulSoup
+from bs4 import BeautifulSoup
 import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
@@ -20,7 +20,7 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-# URL Input Field instead of manual text paste
+# URL Input Field
 faculty_url = st.text_input(
     "University Faculty Directory Link (URL):",
     value="",
@@ -74,7 +74,7 @@ if faculty_url.strip():
             if current_prof:
                 professors.append(current_prof)
                 
-            # Remove duplicate entries if any parsed twice
+            # Remove duplicate entries
             seen_names = set()
             unique_professors = []
             for p in professors:
@@ -209,18 +209,4 @@ with col2:
                     
                     # Section 4
                     pdf.set_font("Helvetica", style="B", size=10)
-                    pdf.cell(0, 5, text="4. Conclusion", new_x="LMARGIN", new_y="NEXT")
-                    pdf.set_font("Helvetica", size=9)
-                    pdf.multi_cell(0, 4, text=f"By bringing my 5.5+ years of practical GIS expertise and spatial modeling background to {prof['name']}'s lab, I aim to advance data-driven spatial frameworks that support advanced environmental analytics, risk mitigation, and sustainable landscape management.")
-                    
-                    pdf_bytes = bytes(pdf.output())
-                    zip_file.writestr(file_name, pdf_bytes)
-                    
-            zip_buffer.seek(0)
-            st.success(f"Successfully generated a ZIP archive containing Statements of Research Interests for {len(professors)} faculty member(s)!")
-            st.download_button(
-                label="Download ZIP File",
-                data=zip_buffer,
-                file_name="Research_Statements_ZIP.zip",
-                mime="application/zip"
-            )
+                    pdf.cell(0, 5, text
