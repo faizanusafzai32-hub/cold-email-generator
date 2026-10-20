@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Enter the university department faculty directory link below. The app will automatically scrape the page, filter targeted academic roles (Professors, Chairs, Heads), and generate custom emails and Statements of Research Interests.")
+st.write("Choose your input method below: either provide a university faculty directory link or manually paste the copied text block.")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -20,86 +20,128 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-# URL Input Field
-faculty_url = st.text_input(
-    "University Faculty Directory Link (URL):",
-    value="",
-    placeholder="https://www.uvic.ca/geography/people/faculty/index.php"
-)
+# Radio button to select input method
+input_method = st.radio("Select Input Method:", ["🔗 URL Link (Web Scraping)", "📝 Manual Text Paste"])
 
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
 professors = []
 
-# Fetch and scrape data if URL is provided
-if faculty_url.strip():
-    try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-        response = requests.get(faculty_url, headers=headers, timeout=10)
-        
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, 'html.parser')
+if input_method == "🔗 URL Link (Web Scraping)":
+    faculty_url = st.text_input(
+        "University Faculty Directory Link (URL):",
+        value="",
+        placeholder="https://www.uvic.ca/geography/people/faculty/index.php"
+    )
+    
+    if faculty_url.strip():
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            response = requests.get(faculty_url, headers=headers, timeout=10)
             
-            for script in soup(["script", "style"]):
-                script.extract()
-                
-            page_text = soup.get_text(separator='\n')
-            lines = [l.strip() for l in page_text.split('\n') if l.strip()]
-            
-            current_prof = None
-            for line in lines:
-                clean_lower = line.lower()
-                is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
-                
-                if is_title_match:
-                    if current_prof:
-                        professors.append(current_prof)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                for script in soup(["script", "style"]):
+                    script.extract()
                     
-                    prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
-                    current_prof = {
-                        "name": prev_line.replace("- ", "").strip(),
-                        "designation": line,
-                        "email": "prof@uni.ca",
-                        "expertise": "Geospatial modeling and remote sensing"
-                    }
-                elif current_prof:
-                    if "@" in line:
-                        current_prof["email"] = line
-                    elif "expertise:" in clean_lower:
-                        current_prof["expertise"] = line.split(":", 1)[1].strip()
-                    elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
-                        if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
-                            current_prof["expertise"] = line
-                            
-            if current_prof:
-                professors.append(current_prof)
+                page_text = soup.get_text(separator='\n')
+                lines = [l.strip() for l in page_text.split('\n') if l.strip()]
                 
-            # Remove duplicate entries
-            seen_names = set()
-            unique_professors = []
-            for p in professors:
-                if p['name'] not in seen_names and len(p['name']) < 40:
-                    seen_names.add(p['name'])
-                    unique_professors.append(p)
-            professors = unique_professors
-            
-            if professors:
-                st.success(f"Successfully scraped and found {len(professors)} targeted faculty member(s) from the link!")
+                current_prof = None
+                for line in lines:
+                    clean_lower = line.lower()
+                    is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
+                    
+                    if is_title_match:
+                        if current_prof:
+                            professors.append(current_prof)
+                        
+                        prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
+                        current_prof = {
+                            "name": prev_line.replace("- ", "").strip(),
+                            "designation": line,
+                            "email": "prof@uni.ca",
+                            "expertise": "Geospatial modeling and remote sensing"
+                        }
+                    elif current_prof:
+                        if "@" in line:
+                            current_prof["email"] = line
+                        elif "expertise:" in clean_lower:
+                            current_prof["expertise"] = line.split(":", 1)[1].strip()
+                        elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
+                            if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
+                                current_prof["expertise"] = line
+                                
+                if current_prof:
+                    professors.append(current_prof)
+                    
+                seen_names = set()
+                unique_professors = []
+                for p in professors:
+                    if p['name'] not in seen_names and len(p['name']) < 40:
+                        seen_names.add(p['name'])
+                        unique_professors.append(p)
+                professors = unique_professors
+                
+                if professors:
+                    st.success(f"Successfully scraped and found {len(professors)} targeted faculty member(s) from the link!")
+                else:
+                    st.warning("Could not automatically extract profiles from this link due to website restrictions. Please switch to 'Manual Text Paste'.")
             else:
-                st.warning("Could not automatically extract profiles from this link. Please ensure it's a valid directory page.")
+                st.error(f"Failed to access URL. Status Code: {response.status_code}")
+        except Exception as e:
+            st.error(f"An error occurred while fetching the link: {e}")
+
+else:
+    prof_input = st.text_area(
+        "Faculty Directory Text:",
+        value="",
+        placeholder="Paste copied faculty text here...",
+        height=250
+    )
+    
+    if prof_input.strip():
+        lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+        current_prof = None
+
+        for line in lines:
+            clean_lower = line.lower()
+            is_title_match = any(title in clean_lower for title in ALLOWED_TITLES)
+            
+            if is_title_match:
+                if current_prof:
+                    professors.append(current_prof)
+                
+                prev_line = lines[lines.index(line) - 1] if lines.index(line) > 0 else "Professor"
+                current_prof = {
+                    "name": prev_line.replace("- ", "").strip(),
+                    "designation": line,
+                    "email": "prof@uni.ca",
+                    "expertise": "Geospatial modeling and remote sensing"
+                }
+            elif current_prof:
+                if "@" in line:
+                    current_prof["email"] = line
+                elif "expertise:" in clean_lower:
+                    current_prof["expertise"] = line.split(":", 1)[1].strip()
+                elif any(k in clean_lower for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere"]):
+                    if len(line) > 12 and "office" not in clean_lower and "leave" not in clean_lower:
+                        current_prof["expertise"] = line
+
+        if current_prof:
+            professors.append(current_prof)
+            
+        if professors:
+            st.success(f"Successfully parsed {len(professors)} targeted faculty member(s) from pasted text!")
         else:
-            st.error(f"Failed to access the URL. HTTP Status Code: {response.status_code}")
-    except Exception as e:
-        st.error(f"An error occurred while fetching the link: {e}")
+            st.warning("No matching faculty roles found in the pasted text.")
 
 col1, col2 = st.columns(2)
 
 # Button 1: Download Word Emails File
 with col1:
     if st.button("📥 Download Emails Word File"):
-        if not faculty_url.strip():
-            st.error("Please enter a valid faculty directory link above.")
-        elif not professors:
-            st.error("No targeted professors found from the provided link.")
+        if not professors:
+            st.error("No faculty data available. Please provide a valid link or paste text.")
         else:
             doc = Document()
             doc.add_heading("Targeted Faculty Cold Emails", 0)
@@ -140,7 +182,7 @@ with col1:
             doc.save(buffer)
             buffer.seek(0)
             
-            st.success(f"Successfully generated cold emails for {len(professors)} scraped faculty member(s)!")
+            st.success(f"Successfully generated cold emails for {len(professors)} faculty member(s)!")
             st.download_button(
                 label="Download .docx File",
                 data=buffer,
@@ -151,10 +193,8 @@ with col1:
 # Button 2: Download Research Statements ZIP File
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
-        if not faculty_url.strip():
-            st.error("Please enter a valid faculty directory link above.")
-        elif not professors:
-            st.error("No targeted professors found from the provided link.")
+        if not professors:
+            st.error("No faculty data available. Please provide a valid link or paste text.")
         else:
             zip_buffer = io.BytesIO()
             
