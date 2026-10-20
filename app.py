@@ -30,7 +30,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("📥 Download Emails Word File"):
         doc = Document()
-        doc.add_heading("UVic/University Professors Cold Emails", 0)
+        doc.add_heading("Professors Cold Emails", 0)
         
         for idx, line in enumerate(lines, 1):
             parts = [p.strip() for p in line.split('|')]
@@ -98,39 +98,44 @@ with col2:
                 # Generate PDF for each professor
                 pdf = FPDF()
                 pdf.add_page()
-                pdf.set_font("Arial", size=11)
+                pdf.set_font("Helvetica", size=11)
                 
-                # Content generation
-                pdf.cell(200, 10, txt="STATEMENT OF RESEARCH INTERESTS", ln=True, align="C")
-                pdf.set_font("Arial", size=10)
-                pdf.cell(200, 6, txt=f"Faizan Ahmad | Mob: {FAIZAN_CV_DETAILS['phone']}", ln=True, align="C")
-                pdf.cell(200, 6, txt=f"{FAIZAN_CV_DETAILS['linkedin']}", ln=True, align="C")
-                pdf.ln(10)
+                # Header
+                pdf.set_font("Helvetica", style="B", size=14)
+                pdf.cell(0, 8, text="STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
+                pdf.set_font("Helvetica", size=10)
+                pdf.cell(0, 5, text=f"Faizan Ahmad | Mob: {FAIZAN_CV_DETAILS['phone']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                pdf.cell(0, 5, text=f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                pdf.ln(8)
                 
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(200, 6, txt=f"Target Lab / Focus: {expertise}", ln=True)
-                pdf.ln(5)
+                # Section Title
+                pdf.set_font("Helvetica", style="B", size=11)
+                pdf.cell(0, 6, text=f"Target Lab / Research Focus: {expertise}", new_x="LMARGIN", new_y="NEXT")
+                pdf.ln(4)
                 
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(200, 6, txt="1. Academic & Professional Background", ln=True)
-                pdf.set_font("Arial", size=10)
-                pdf.multi_cell(0, 5, txt=f"I hold a Master of Science in Remote Sensing & GIS and a Bachelor of Science in Geoinformatics, complemented by over 5.5 years of professional experience as a GIS Specialist. My core expertise lies in spatiotemporal data analysis, automated geospatial workflows in Python, and cloud-based Earth Observation analytics using Google Earth Engine (GEE). My research capability is demonstrated by a peer-reviewed publication in the Journal for Nature Conservation (Elsevier, 2026).")
-                pdf.ln(5)
+                # Section 1
+                pdf.set_font("Helvetica", style="B", size=11)
+                pdf.cell(0, 6, text="1. Academic & Professional Background", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", size=10)
+                pdf.multi_cell(0, 5, text="I hold a Master of Science in Remote Sensing & GIS and a Bachelor of Science in Geoinformatics, complemented by over 5.5 years of professional experience as a GIS Specialist. My core expertise lies in spatiotemporal data analysis, automated geospatial workflows in Python, and cloud-based Earth Observation analytics using Google Earth Engine (GEE). My research capability is demonstrated by a peer-reviewed publication in the Journal for Nature Conservation (Elsevier, 2026).")
+                pdf.ln(4)
                 
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(200, 6, txt="2. My Research Focus & Alignment", ln=True)
-                pdf.set_font("Arial", size=10)
-                pdf.multi_cell(0, 5, txt=f"My research centers on utilizing satellite remote sensing, spatial statistics, and machine learning to model environmental risks and ecosystem dynamics. I am particularly drawn to {name}'s lab and work focusing on {expertise}. I am keen to leverage cloud-based Earth Observation and automated geospatial analytics to advance risk mapping and spatial modeling.")
-                pdf.ln(5)
+                # Section 2
+                pdf.set_font("Helvetica", style="B", size=11)
+                pdf.cell(0, 6, text="2. My Research Focus & Alignment", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", size=10)
+                pdf.multi_cell(0, 5, text=f"My research centers on utilizing satellite remote sensing, spatial statistics, and machine learning to model environmental risks and ecosystem dynamics. I am particularly drawn to {name}'s lab and work focusing on {expertise}. I am keen to leverage cloud-based Earth Observation and automated geospatial analytics to advance risk mapping and spatial modeling.")
+                pdf.ln(4)
                 
-                pdf.set_font("Arial", style="B", size=11)
-                pdf.cell(200, 6, txt="3. Proposed PhD Research Directions", ln=True)
-                pdf.set_font("Arial", size=10)
-                pdf.multi_cell(0, 5, txt="1. Spatiotemporal Risk Modeling: Integrating multi-decadal satellite observation time-series with spatial datasets.\n2. Automated Landscape Analytics: Developing Python and GEE-driven workflows for automated mapping across large spatial scales.\n3. Machine Learning & Predictive Analytics: Applying advanced spatial statistics and machine learning algorithms.")
-                pdf.ln(5)
+                # Section 3
+                pdf.set_font("Helvetica", style="B", size=11)
+                pdf.cell(0, 6, text="3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
+                pdf.set_font("Helvetica", size=10)
+                pdf.multi_cell(0, 5, text="1. Spatiotemporal Risk Modeling: Integrating multi-decadal satellite observation time-series with spatial datasets.\n2. Automated Landscape Analytics: Developing Python and GEE-driven workflows for automated mapping across large spatial scales.\n3. Machine Learning & Predictive Analytics: Applying advanced spatial statistics and machine learning algorithms.")
                 
-                pdf_output = pdf.output(dest='S').encode('latin1')
-                zip_file.writestr(f"{idx}_{clean_name}_Research_Statement.pdf", pdf_output)
+                # Output PDF byte array directly
+                pdf_bytes = bytes(pdf.output())
+                zip_file.writestr(f"{idx}_{clean_name}_Research_Statement.pdf", pdf_bytes)
                 
         zip_buffer.seek(0)
         st.success("Research statements ka ZIP folder tayyar hai!")
