@@ -5,7 +5,7 @@ import zipfile
 from fpdf import FPDF
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan professors ki details sirf pipe format mein paste karein: Name | Designation | Email | Expertise")
+st.write("Yahan university ki website se copy kiya hua multi-line professors ka data paste karein.")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -17,35 +17,63 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-default_text = (
-    "Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling\n"
-    "Dr. David Atkinson | Professor | datkinso@uvic.ca | Climate, weather and human and natural systems, data analysis"
-)
+default_text = """David Atkinson
+Status: On leave until January 2027
+Professor
+Geography
+Office: DTB B120
+datkinso@uvic.ca
+250-721-7332
+Area(s) of expertise: Climate, weather and human and natural systems, data analysis, modelling, the Arctic
+
+Chris Bone
+Associate professor, Department chair
+Geography
+Office: DTB B203c
+chrisbone@uvic.ca
+250-472-5620
+Area(s) of expertise: Geospatial technologies, spatial simulation modelling, human-environment interactions"""
 
 prof_input = st.text_area(
-    "Professors Details (Har professor aik line mein, pipe '|' ke sath):",
+    "Professors Data (Multi-line blocks):",
     value=default_text,
-    height=250
+    height=300
 )
 
-# Strict Pipe-separated parser: Sirf wohi line uthayega jisme '|' mojood ho
+# Smart Multi-line Block Parser
 professors = []
-raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+# Blocks are separated by empty lines
+blocks = [b.strip() for b in prof_input.split('\n\n') if b.strip()]
 
-for line in raw_lines:
-    if '|' in line:
-        parts = [p.strip() for p in line.split('|')]
-        if len(parts) >= 4:
-            name = parts[0]
-            designation = parts[1]
-            email = parts[2]
-            expertise = parts[3]
-            professors.append({
-                "name": name,
-                "designation": designation,
-                "email": email,
-                "expertise": expertise
-            })
+for block in blocks:
+    lines = [l.strip() for l in block.split('\n') if l.strip()]
+    if not lines:
+        continue
+    
+    # First line is always the professor's name
+    name = lines[0].replace("- ", "").strip()
+    designation = "Professor"
+    email = "prof@uni.ca"
+    expertise = "Geospatial modeling and remote sensing"
+    
+    for line in lines[1:]:
+        clean_line = line.replace("- ", "").strip()
+        if "@" in clean_line:
+            email = clean_line
+        elif any(k in clean_line.lower() for k in ["professor", "chair", "associate", "assistant", "lecturer"]):
+            designation = clean_line
+        elif "expertise:" in clean_line.lower():
+            expertise = clean_line.split(":", 1)[1].strip()
+        elif any(k in clean_line.lower() for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies"]):
+            if len(clean_line) > 15 and "office" not in clean_line.lower():
+                expertise = clean_line
+                
+    professors.append({
+        "name": name,
+        "designation": designation,
+        "email": email,
+        "expertise": expertise
+    })
 
 col1, col2 = st.columns(2)
 
@@ -53,7 +81,7 @@ col1, col2 = st.columns(2)
 with col1:
     if st.button("📥 Download Emails Word File"):
         if not professors:
-            st.error("Barah-e-karam theek format mein details darj karein (Name | Designation | Email | Expertise)")
+            st.error("Barah-e-karam theek data darj karein.")
         else:
             doc = Document()
             doc.add_heading("Professors Cold Emails", 0)
@@ -106,7 +134,7 @@ with col1:
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         if not professors:
-            st.error("Barah-e-karam theek format mein details darj karein (Name | Designation | Email | Expertise)")
+            st.error("Barah-e-karam theek data darj karein.")
         else:
             zip_buffer = io.BytesIO()
             
