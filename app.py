@@ -19,7 +19,6 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-# Tabs for dual-workflow
 tab1, tab2 = st.tabs(["📧 1. Extract Faculty & Download Excel", "📄 2. Upload Excel & Generate Research Statements (ZIP)"])
 
 ALLOWED_TITLES = ["professor", "assistant professor", "associate professor", "chair", "head"]
@@ -65,6 +64,29 @@ def parse_faculty_data(lines):
             })
         i += 1
 
+    # Fallback for personal websites without explicit faculty title tags
+    if not professors and cleaned_lines:
+        extracted_email = "prof@uni.ca"
+        extracted_name = "Professor"
+        extracted_expertise = "Geospatial modeling and remote sensing"
+        
+        for line in cleaned_lines:
+            if "@" in line and extracted_email == "prof@uni.ca":
+                extracted_email = line.strip()
+            elif any(k in line.lower() for k in ["climate", "modelling", "modeling", "remote", "gis", "spatial", "human", "technologies", "analysis", "cryosphere", "urban", "ecology"]):
+                if len(line) > 12:
+                    extracted_expertise = line.strip()
+            elif len(line.split()) in [2, 3] and extracted_name == "Professor" and not any(char.isdigit() for char in line):
+                if "about" not in line.lower() and "contact" not in line.lower() and "home" not in line.lower():
+                    extracted_name = line.strip()
+
+        professors.append({
+            "name": extracted_name,
+            "designation": "Professor",
+            "email": extracted_email,
+            "expertise": extracted_expertise
+        })
+
     seen = set()
     unique_profs = []
     for p in professors:
@@ -78,28 +100,50 @@ def parse_faculty_data(lines):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.write("Extract targeted faculty profiles via link or manual text, then download the structured Excel sheet.")
-    input_method = st.radio("Select Input Method:", ["🔗 URL Link (Web Scraping)", "📝 Manual Text Paste"])
+    st.write("Extract targeted faculty profiles or personal website details, then download the structured Excel sheet.")
+    input_method = st.radio("Select Input Method:", ["🔗 URL Links (Multiple Web Scraping)", "📝 Manual Text Paste"])
     professors = []
 
-    if input_method == "🔗 URL Link (Web Scraping)":
-        faculty_url = st.text_input("University Faculty Directory Link (URL):", placeholder="https://www.uvic.ca/geography/people/faculty/index.php")
-        if faculty_url.strip():
-            try:
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-                response = requests.get(faculty_url, headers=headers, timeout=10)
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    for script in soup(["script", "style"]):
-                        script.extract()
-                    lines = [l.strip() for l in soup.get_text(separator='\n').split('\n') if l.strip()]
-                    professors = parse_faculty_data(lines)
-                    if professors:
-                        st.success(f"Successfully scraped {len(professors)} unique faculty member(s)!")
-                    else:
-                        st.warning("Could not extract profiles automatically. Try 'Manual Text Paste'.")
-            except Exception as e:
-                st.error(f"Error fetching URL: {e}")
+    if input_method == "🔗 URL Links (Multiple Web Scraping)":
+        urls_input = st.text_area(
+            "University / Personal Website Links (One URL per line or separated by commas):",
+            placeholder="https://www.uvic.ca/geography/people/faculty/index.php\nhttps://personal-lab-website.org/prof-smith",
+            height=150
+        )
+        
+        if urls_input.strip():
+            # Extract multiple URLs using regex split
+            raw_urls = [u.strip() for u in re.split(r'[\n,\s]+', urls_input) if u.strip()]
+            
+            all_extracted_profs = []
+            for url in raw_urls:
+                if not url.startswith(('http://', 'https://')):
+                    url = 'https://' + url
+                try:
+                    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                    response = requests.get(url, headers=headers, timeout=10)
+                    if response.status_code == 200:
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        for script in soup(["script", "style"]):
+                            script.extract()
+                        lines = [l.strip() for l in soup.get_text(separator='\n').split('\n') if l.strip()]
+                        extracted = parse_faculty_data(lines)
+                        all_extracted_profs.extend(extracted)
+                except Exception as e:
+                    st.error(f"Error fetching {url}: {e}")
+
+            # Global deduplication across all URLs
+            seen_global = set()
+            for p in all_extracted_profs:
+                ident = (p['name'].lower(), p['email'].lower())
+                if ident not in seen_global:
+                    seen_global.add(ident)
+                    professors.append(p)
+
+            if professors:
+                st.success(f"Successfully processed {len(raw_urls)} URL(s) and found {len(professors)} unique profile(s)!")
+            else:
+                st.warning("Could not extract profiles automatically from the provided links. Try 'Manual Text Paste'.")
     else:
         prof_input = st.text_area("Faculty Directory Text:", placeholder="Paste copied faculty text here...", height=200)
         if prof_input.strip():
@@ -162,7 +206,7 @@ with tab2:
     if uploaded_file is not None:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
-            st.success(f"Successfully loaded Excel file with {len(df_uploaded)} professor records!")
+            st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
             st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
             
             if st.button("📥 Generate & Download Research Statements (ZIP)"):
@@ -173,7 +217,6 @@ with tab2:
                         prof_name = str(row.get("Name", f"Professor_{idx+1}")).strip()
                         email_body = str(row.get("Email Body", ""))
                         
-                        # Extract expertise from email body if present
                         expertise_match = re.search(r"lab’s work on (.*?)\. My background", email_body, re.DOTALL)
                         if expertise_match:
                             expertise = expertise_match.group(1).strip()
@@ -236,7 +279,7 @@ with tab2:
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated Research Statement PDFs for {len(df_uploaded)} professor(s)!")
+                st.success(f"Successfully generated Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
