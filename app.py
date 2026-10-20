@@ -27,6 +27,7 @@ def clean_pdf_text(text):
     return (text.replace('“', '"').replace('”', '"')
                 .replace('‘', "'").replace('’', "'")
                 .replace('—', '-').replace('–', '-')
+                .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
 def scrape_url_smartly(url):
@@ -242,18 +243,18 @@ with tab2:
                         pdf.multi_cell(0, 3.8, "I hold a Master of Science in Remote Sensing & GIS and a Bachelor of Science in Geoinformatics, complemented by over 5.5 years of professional experience as a GIS Specialist. My technical competencies span advanced spatiotemporal data analysis, automated geospatial processing workflows in Python, and cloud-based Earth Observation analytics via Google Earth Engine (GEE). My foundational research capability is explicitly demonstrated by my 2026 peer-reviewed publication in the Journal for Nature Conservation (Elsevier), where I utilized rigorous spatial statistical modeling to evaluate environmental land dynamics and ecological responses.")
                         pdf.ln(2)
                         
-                        # Section 2 (Deeply tailored)
+                        # Section 2
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "2. Motivation & Alignment with Lab Research", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, f"My doctoral research aspirations center on leveraging high-resolution satellite remote sensing, spatial statistics, and machine learning algorithms to model complex environmental interactions and risk surfaces. I am particularly drawn to the pioneering work conducted in {prof_name}'s research lab focusing specifically on {expertise}. Your lab's contributions to spatial analytics and regional dynamics resonate seamlessly with my professional background and long-term academic goals. I am eager to integrate cloud-based big data analytics with your ongoing projects to push the boundaries of predictive environmental modeling.")
                         pdf.ln(2)
                         
-                        # Section 3 (Unique & Robust PhD Research Directions)
+                        # Section 3
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To contribute meaningfully to {prof_name}'s laboratory objectives, I propose focusing my doctoral research on the following interconnected directions:\n• High-Resolution Spatiotemporal Modeling: Synthesizing multi-decadal satellite observation time-series with high-density spatial vector datasets to evaluate long-term environmental trends.\n• Automated Cloud-Native Geospatial Workflows: Developing scalable Python and Google Earth Engine (GEE) pipelines tailored to {expertise.split(',')[0].lower()} for rapid, large-scale spatial mapping.\n• Predictive Machine Learning Frameworks: Applying advanced spatial statistical techniques and machine learning algorithms to quantify environmental risks and support evidence-based decision making.")
+                        pdf.multi_cell(0, 3.8, f"To contribute meaningfully to {prof_name}'s laboratory objectives, I propose focusing my doctoral research on the following interconnected directions:\n- High-Resolution Spatiotemporal Modeling: Synthesizing multi-decadal satellite observation time-series with high-density spatial vector datasets to evaluate long-term environmental trends.\n- Automated Cloud-Native Geospatial Workflows: Developing scalable Python and Google Earth Engine (GEE) pipelines tailored to {expertise.split(',')[0].lower()} for rapid, large-scale spatial mapping.\n- Predictive Machine Learning Frameworks: Applying advanced spatial statistical techniques and machine learning algorithms to quantify environmental risks and support evidence-based decision making.")
                         pdf.ln(2)
                         
                         # Section 4
