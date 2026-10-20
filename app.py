@@ -5,7 +5,7 @@ import zipfile
 from fpdf import FPDF
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan professors ki details paste karein (Name | Designation | Email | Expertise)")
+st.write("Yahan professors ki details paste karein (Chahay pipe format ho ya website ka copy-paste block)")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -18,30 +18,45 @@ FAIZAN_CV_DETAILS = {
 }
 
 prof_input = st.text_area(
-    "Professors ki details yahan paste karein (Name | Designation | Email | Expertise):",
+    "Professors ki details yahan paste karein:",
     value="Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling, human-environment interactions"
 )
 
-raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
 professors = []
 
-for line in raw_lines:
-    if '|' in line:
-        parts = [p.strip() for p in line.split('|')]
-        name = parts[0] if len(parts) > 0 and parts[0] else "Professor"
-        designation = parts[1] if len(parts) > 1 and parts[1] else "Professor"
-        email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
-        expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
+# Check if input uses pipe format or multi-line blocks
+if "|" in prof_input:
+    raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+    for line in raw_lines:
+        if '|' in line:
+            parts = [p.strip() for p in line.split('|')]
+            name = parts[0] if len(parts) > 0 and parts[0] else "Professor"
+            designation = parts[1] if len(parts) > 1 and parts[1] else "Professor"
+            email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
+            expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
+            professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
+else:
+    # Smart block parser for direct website copy-paste
+    blocks = [b.strip() for b in prof_input.split('\n\n') if b.strip()]
+    for block in blocks:
+        lines = [l.strip() for l in block.split('\n') if l.strip()]
+        if not lines:
+            continue
+        
+        name = lines[0]
+        designation = "Professor"
+        email = "prof@uni.ca"
+        expertise = "Geospatial modeling and remote sensing"
+        
+        for line in lines[1:]:
+            if "@" in line:
+                email = line
+            elif any(k in line.lower() for k in ["professor", "chair", "associate", "assistant", "faculty", "lecturer"]):
+                designation = line
+            elif any(k in line.lower() for k in ["expertise", "research", "modelling", "modeling", "remote", "gis", "climate", "spatial", "interaction"]):
+                expertise = line
+                
         professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
-    else:
-        # Agar koi simple line bhi ho toh usko name maan lein taake "Dr. Professor" na aaye
-        if len(line) > 3 and not line.startswith("http"):
-            professors.append({
-                "name": line,
-                "designation": "Professor",
-                "email": "prof@uni.ca",
-                "expertise": "Geospatial technologies and remote sensing"
-            })
 
 if not professors:
     professors.append({
@@ -103,14 +118,14 @@ with col1:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-# Button 2: Research Interest PDFs (ZIP) - Custom Naming & Proper Professor Name
+# Button 2: Research Interest PDFs (ZIP) - Correct Naming & Proper Professor Name inside PDF
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for idx, prof in enumerate(professors, 1):
-                clean_prof_name = prof['name'].replace("Dr. ", "").replace(".", "").strip()
+                clean_prof_name = prof['name'].replace("Dr. ", "").replace(".", "").strip().replace(" ", "_")
                 file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                 
                 pdf = FPDF()
