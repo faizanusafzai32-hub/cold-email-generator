@@ -3,10 +3,9 @@ from docx import Document
 import io
 import zipfile
 from fpdf import FPDF
-import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
-st.write("Yahan professors ki details paste karein (Har professor ki aik line: Name | Designation | Email | Expertise)")
+st.write("Yahan professors ki details paste karein. Har professor ki detail aik new line mein honi chahiye.")
 
 FAIZAN_CV_DETAILS = {
     "name": "Faizan Ahmad",
@@ -18,15 +17,20 @@ FAIZAN_CV_DETAILS = {
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
-prof_input = st.text_area(
-    "Professors ki details yahan paste karein (Format: Name | Designation | Email | Expertise):",
-    value="Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling, human-environment interactions\nDr. David Atkinson | Professor | datkinso@uvic.ca | Climate, weather and human and natural systems, data analysis, modelling, the Arctic",
-    height=200
+default_text = (
+    "Dr. Chris Bone | Associate Professor | chrisbone@uvic.ca | Geospatial technologies, spatial simulation modelling\n"
+    "Dr. David Atkinson | Professor | datkinso@uvic.ca | Climate, weather and human and natural systems, data analysis"
 )
 
-# Parsing logic: Sirf un lines ko uthayega jisme '|' ho ya valid professor name + email ho
-raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+prof_input = st.text_area(
+    "Professors ki details yahan paste karein (Format: Name | Designation | Email | Expertise):",
+    value=default_text,
+    height=250
+)
+
+# Robust parsing logic for multiple lines
 professors = []
+raw_lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
 
 for line in raw_lines:
     if '|' in line:
@@ -36,11 +40,18 @@ for line in raw_lines:
         email = parts[2] if len(parts) > 2 and parts[2] else "prof@uni.ca"
         expertise = parts[3] if len(parts) > 3 and parts[3] else "Geospatial modeling and remote sensing"
         
-        # Ignores unwanted headers like 'Faculty'
         if name.lower() not in ["faculty", "geography", "status", "professor"]:
             professors.append({"name": name, "designation": designation, "email": email, "expertise": expertise})
+    else:
+        # Agar user ne pipe ki bajaye simple text diya ho
+        if len(line) > 3 and not "@" in line and not line.lower().startswith("http"):
+            professors.append({
+                "name": line,
+                "designation": "Professor",
+                "email": "prof@uni.ca",
+                "expertise": "Geospatial technologies and remote sensing"
+            })
 
-# Fallback default agar paste ghalat ho
 if not professors:
     professors.append({
         "name": "Dr. Chris Bone",
@@ -51,7 +62,7 @@ if not professors:
 
 col1, col2 = st.columns(2)
 
-# Button 1: Emails Word File
+# Button 1: Emails Word File (Multi-Professor support)
 with col1:
     if st.button("📥 Download Emails Word File"):
         doc = Document()
@@ -93,7 +104,7 @@ with col1:
         doc.save(buffer)
         buffer.seek(0)
         
-        st.success("Emails Word file tayyar hai!")
+        st.success(f"Kul {len(professors)} professors ki emails tayyar hain!")
         st.download_button(
             label="Download .docx File",
             data=buffer,
@@ -101,7 +112,7 @@ with col1:
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
 
-# Button 2: Research Interest PDFs (ZIP)
+# Button 2: Research Interest PDFs (ZIP) - Multi-Professor support
 with col2:
     if st.button("📥 Download Research Interests (ZIP)"):
         zip_buffer = io.BytesIO()
@@ -164,7 +175,7 @@ with col2:
                 zip_file.writestr(file_name, pdf_bytes)
                 
         zip_buffer.seek(0)
-        st.success("Research statements ka ZIP folder tayyar hai!")
+        st.success(f"Kul {len(professors)} professors ki Research Statements ka ZIP folder tayyar hai!")
         st.download_button(
             label="Download ZIP File",
             data=zip_buffer,
