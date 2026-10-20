@@ -215,7 +215,9 @@ with tab2:
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
-                        pdf = FPDF()
+                        # Standard A4 Page Setup with proper margins
+                        pdf = FPDF(orientation='P', unit='mm', format='A4')
+                        pdf.set_margins(left=15, top=15, right=15)
                         pdf.add_page()
                         pdf.set_auto_page_break(auto=True, margin=15)
                         
@@ -228,12 +230,12 @@ with tab2:
                         pdf.set_font("Helvetica", size=9)
                         pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, f"Mob: {FAIZAN_CV_DETAILS['phone']} | Email: {FAIZAN_CV_DETAILS['email']}", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, f"{FAIZ_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
                         
-                        # Research Focus
+                        # Research Focus (Using multi_cell to prevent margin overflow)
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, f"Research Focus: Advanced Spatiotemporal Modeling, Remote Sensing Analytics, and {expertise[:50]}", new_x="LMARGIN", new_y="NEXT")
+                        pdf.multi_cell(0, 4, f"Research Focus: Advanced Spatiotemporal Modeling, Remote Sensing Analytics, and {expertise}", align="L")
                         pdf.ln(2)
                         
                         # Section 1
@@ -267,7 +269,7 @@ with tab2:
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated high-quality, customized Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.success(f"Successfully generated professional A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
