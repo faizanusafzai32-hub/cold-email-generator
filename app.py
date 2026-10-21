@@ -30,36 +30,14 @@ def clean_pdf_text(text):
                 .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
-def parse_manual_text(text_input):
-    professors = []
-    blocks = text_input.strip().split('\n\n')
-    
-    for block in blocks:
-        lines = [l.strip() for l in block.split('\n') if l.strip()]
-        if not lines:
-            continue
-            
-        name = "Professor"
-        email = "contact@university.edu"
-        expertise = "Geospatial Analysis and Environmental Modeling"
-        
-        for line in lines:
-            if "@" in line:
-                email = line.strip()
-            elif any(title in line.lower() for title in ["dr.", "prof", "ph.d", "department", "chair"]):
-                name = line.replace("Dr.", "").replace("Prof.", "").strip()
-            elif len(line.split()) in [2, 3] and name == "Professor" and not any(char.isdigit() for char in line):
-                name = line.strip()
-            elif len(line) > 15 and "http" not in line.lower():
-                expertise = line
-                
-        professors.append({
-            "name": clean_pdf_text(name),
-            "email": clean_pdf_text(email),
-            "expertise": clean_pdf_text(expertise)
-        })
-        
-    return professors
+def extract_clean_name(raw_text):
+    # Noise words filter
+    bad_words = ["assistant", "associate", "professor", "department", "university", "faculty", "gis", "health", "policy", "chair", "director", "dr.", "dr"]
+    words = raw_text.split()
+    cleaned = [w for w in words if w.lower().strip(".,") not in bad_words and not any(char.isdigit() for char in w)]
+    if len(cleaned) >= 2:
+        return " ".join(cleaned[:3]).title()
+    return ""
 
 def scrape_url_smartly(url):
     try:
@@ -72,51 +50,57 @@ def scrape_url_smartly(url):
         for script in soup(["script", "style", "nav", "footer"]):
             script.extract()
             
+        page_full_text = soup.get_text()
+        
+        # Exact Email Extraction
         email = ""
-        mailto_tag = soup.find(href=re.compile(r"^mailto:"))
+        mailto_tag = soup.find(href=re.compile(r"^mailto:", re.I))
         if mailto_tag:
             email = mailto_tag['href'].replace("mailto:", "").strip().split('?')[0]
         
         if not email or "@" not in email:
-            page_full_text = soup.get_text()
             email_match = re.search(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', page_full_text)
             if email_match:
                 email = email_match.group(0)
-            else:
-                email = "contact@university.edu"
                 
+        # Precise Name Extraction from URL or Title
         name = ""
-        for h in soup.find_all(['h1', 'h2']):
-            text = h.get_text().strip()
-            if len(text.split()) in [2, 3, 4] and not any(char.isdigit() for char in text):
-                if not any(w in text.lower() for w in ["home", "department", "faculty", "welcome", "research", "university"]):
-                    name = text.replace("Dr.", "").replace("Prof.", "").strip()
-                    break
-                    
+        # Try extracting from URL slug first (most reliable for faculty profiles)
+        url_slug = url.strip('/').split('/')[-1].replace('~', '').replace('.', ' ')
+        if len(url_slug.split()) in [2, 3] and not any(char.isdigit() for char in url_slug):
+            name = url_slug.title()
+            
         if not name and soup.title:
             title_text = soup.title.get_text().strip()
-            clean_title = re.split(r'[-|:]', title_text)[0].strip()
-            if len(clean_title.split()) in [2, 3]:
-                name = clean_title.replace("Dr.", "").replace("Prof.", "").strip()
-                
+            clean_title = re.split(r'[-|:|–]', title_text)[0].strip()
+            name = extract_clean_name(clean_title)
+            
+        if not name:
+            for h in soup.find_all(['h1', 'h2']):
+                candidate = extract_clean_name(h.get_text().strip())
+                if candidate:
+                    name = candidate
+                    break
+                    
         if not name:
             name = "Faculty Member"
             
-        expertise = "Geospatial Modeling and Environmental Systems"
+        # Precise Expertise Extraction
+        expertise = "Geospatial Analytics, Remote Sensing, and Spatial Statistics"
         meta_desc = soup.find("meta", attrs={"name": "description"})
         if meta_desc and meta_desc.get("content"):
             expertise = meta_desc["content"][:100]
         else:
             for p in soup.find_all('p'):
                 p_text = p.get_text().strip()
-                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "modeling", "climate", "demography", "health", "urban"]):
-                    if len(p_text) > 20 and len(p_text) < 150:
+                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "demography", "health"]):
+                    if 20 < len(p_text) < 150:
                         expertise = p_text
                         break
                         
         return {
             "name": clean_pdf_text(name),
-            "email": clean_pdf_text(email),
+            "email": clean_pdf_text(email if email else "prof@university.edu"),
             "expertise": clean_pdf_text(expertise)
         }
     except Exception as e:
@@ -125,59 +109,72 @@ def scrape_url_smartly(url):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.write("Aapke mentor-style framework ke mutabiq faculty profiles scrape karke professional Excel sheet download karein.")
-    input_method = st.radio("Select Input Method:", ["🔗 URL Links (Multiple Web Scraping)", "📝 Manual Text Paste"])
+    st.write("Aap targeted faculty details URL, Raw Text, ya Direct Manual Form ke zariye extract kar sakte hain.")
+    input_method = st.radio("Select Input Method:", ["🔗 URL Links Scraping", "✍️ Direct Manual Input Form", "📝 Raw Text Paste"])
     professors = []
 
-    if input_method == "🔗 URL Links (Multiple Web Scraping)":
+    if input_method == "🔗 URL Links Scraping":
         urls_input = st.text_area(
-            "University / Personal Website Links (One URL per line):",
-            placeholder="https://profiles.utdallas.edu/yingyi.lin",
-            height=150
+            "Faculty Web Links (One URL per line):",
+            placeholder="https://profiles.utdallas.edu/yingyi.lin\nwww.utdallas.edu/~briggs/",
+            height=120
         )
-        
         if urls_input.strip():
             raw_urls = [u.strip() for u in re.split(r'[\n,\s]+', urls_input) if u.strip()]
-            extracted_profs = []
             for url in raw_urls:
                 if not url.startswith(('http://', 'https://')):
                     url = 'https://' + url
                 prof_data = scrape_url_smartly(url)
                 if prof_data:
-                    extracted_profs.append(prof_data)
-
-            seen_global = set()
-            for p in extracted_profs:
-                ident = (p['name'].lower(), p['email'].lower())
-                if ident not in seen_global:
-                    seen_global.add(ident)
-                    professors.append(p)
-
+                    professors.append(prof_data)
             if professors:
-                st.success(f"Successfully processed {len(raw_urls)} URL(s) and extracted {len(professors)} profile(s) accurately!")
-            else:
-                st.warning("Could not extract profiles automatically from these links.")
+                st.success(f"Extracted {len(professors)} clean profile(s)!")
+
+    elif input_method == "✍️ Direct Manual Input Form":
+        col1, col2 = st.columns(2)
+        with col1:
+            m_name = st.text_input("Professor Full Name:", value="Yingyi Lin")
+            m_email = st.text_input("Email Address:", value="Yingyi.Lin@UTDallas.edu")
+        with col2:
+            m_expertise = st.text_input("Research Expertise / Domain:", value="Demography, Spatial Health, and Urban Dynamics")
+            
+        if st.button("Add Professor Profile"):
+            professors.append({
+                "name": clean_pdf_text(m_name),
+                "email": clean_pdf_text(m_email),
+                "expertise": clean_pdf_text(m_expertise)
+            })
+            st.success("Profile Added Successfully!")
+
     else:
-        prof_input = st.text_area("Faculty Details Text (Name, Email, Expertise):", placeholder="Yingyi Lin\nYingyi.Lin@UTDallas.edu\nDemography, development, health", height=200)
+        prof_input = st.text_area("Paste Copied Profile Text:", placeholder="Yingyi Lin\nYingyi.Lin@UTDallas.edu\nDemography, development, health", height=150)
         if prof_input.strip():
-            professors = parse_manual_text(prof_input)
-            if professors:
-                st.success(f"Extracted {len(professors)} profile(s) successfully from text!")
+            lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
+            p_email = next((l for l in lines if "@" in l), "prof@university.edu")
+            p_name = extract_clean_name(lines[0]) if len(lines) > 0 else "Professor"
+            if not p_name:
+                p_name = lines[0]
+            p_exp = lines[2] if len(lines) > 2 else "Geospatial Analytics and Remote Sensing"
+            
+            professors.append({
+                "name": clean_pdf_text(p_name),
+                "email": clean_pdf_text(p_email),
+                "expertise": clean_pdf_text(p_exp)
+            })
+            st.success("Extracted 1 profile from text!")
 
     if st.button("📥 Download Emails Excel File"):
         if not professors:
-            st.error("No faculty data available.")
+            st.error("No faculty data available to generate Excel.")
         else:
             excel_data = []
             for prof in professors:
-                full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
+                full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 topic = prof['expertise'].split(',')[0][:35].title()
                 
-                # Single Clean Subject Line mentioning professor's specific expertise
-                subject = f"Prospective PhD Inquiry: {topic} & Spatial Modeling — Faizan Ahmad"
+                subject = f"Prospective PhD Inquiry: {topic} & Spatial Analytics — Faizan Ahmad"
                 
-                # Under 200 words impact-driven email body with funded position inquiry
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I have been closely following your lab's recent contributions to {prof['expertise']}. Your methodological framework aligns exceptionally well with my research background in spatial statistics and environmental analytics.\n\n"
@@ -232,13 +229,12 @@ with tab2:
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         subject = clean_pdf_text(str(row.get("Email Subject", "")))
                         
-                        # Extract exact expertise from email subject
                         if ":" in subject and "—" in subject:
-                            expertise = subject.split(":")[1].split("—")[0].replace("& Spatial Modeling", "").strip()
+                            expertise = subject.split(":")[1].split("—")[0].replace("& Spatial Analytics", "").strip()
                         else:
                             expertise = "Geospatial Modeling & Environmental Systems"
                             
-                        clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
+                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
                         pdf = FPDF(orientation='P', unit='mm', format='A4')
@@ -294,7 +290,7 @@ with tab2:
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated mentor-guided A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.success(f"Successfully generated A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
