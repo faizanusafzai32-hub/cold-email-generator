@@ -143,7 +143,7 @@ with tab1:
                 professors.append({
                     "name": res["name"],
                     "email": res["email"],
-                    "focus": res["expertise"] if "expertise" in res else res["focus"],
+                    "focus": res["focus"],
                     "lab": ""
                 })
                 st.success(f"Successfully scraped: {res['name']} ({res['email']})")
@@ -162,7 +162,7 @@ with tab1:
             })
             st.success("Extracted 1 profile successfully!")
 
-    if st.button("📥 Generate & Download Excel File"):
+    if st.button("📥 Download Emails Excel File"):
         if not professors:
             st.error("No faculty data available.")
         else:
@@ -201,7 +201,6 @@ with tab1:
                 df.to_excel(writer, index=False, sheet_name="Targeted Email")
             buffer.seek(0)
             
-            st.success("Successfully generated tailored email package!")
             st.download_button(
                 label="Download .xlsx File",
                 data=buffer,
@@ -228,12 +227,17 @@ with tab2:
                     for idx, row in df_uploaded.iterrows():
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         subject = clean_pdf_text(str(row.get("Email Subject", "")))
+                        email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
+                        # Solid & Unique extraction of research focus from Email Subject or Body
+                        focus = "Spatial Analysis and Environmental Modeling"
                         if ":" in subject and "—" in subject:
                             focus = subject.split(":")[1].split("—")[0].strip()
-                        else:
-                            focus = "Spatial Analysis and Environmental Modeling"
-                            
+                        elif "focusing on" in email_body:
+                            match = re.search(r"focusing on (.*?)\. Your lab's", email_body)
+                            if match:
+                                focus = match.group(1).strip()
+                                
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
@@ -242,6 +246,7 @@ with tab2:
                         pdf.add_page()
                         pdf.set_auto_page_break(auto=True, margin=15)
                         
+                        # Header
                         pdf.set_font("Helvetica", style="B", size=13)
                         pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                         
@@ -253,28 +258,33 @@ with tab2:
                         pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
                         
+                        # Unique Research Focus Header aligned with Professor's Domain
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.multi_cell(0, 4, f"Research Focus: Integrating Spatial Analytics, Python Workflows, and {focus}", align="L")
                         pdf.ln(2)
                         
+                        # Section 1: Academic Foundation
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, f"My academic credentials include an M.Sc. in Remote Sensing & GIS and a B.Sc. in GeoInformatics, backed by 5.5+ years of practical GIS experience. My technical competencies span advanced Python, SQL, Google Earth Engine (GEE), and spatial statistical modeling. Demonstrating my academic research capability, I co-authored peer-reviewed research published in the Journal for Nature Conservation (Elsevier) focusing on spatiotemporal dynamics and spatial risk assessment.")
                         pdf.ln(2)
                         
+                        # Section 2: Unique Alignment with Professor's Research Lab
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, f"2. Alignment with Dr. {prof_name.replace('Dr. ', '')}'s Research Lab", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, f"My doctoral research interests are directly inspired by the scholarly contributions and investigations led by Dr. {prof_name.replace('Dr. ', '')} in the domain of {focus}. The methodological frameworks developed through your research group offer an ideal platform for integrating big data spatial analytics with complex geographical systems. I am eager to contribute my technical background in automated geospatial processing to support and expand upon your ongoing objectives.")
                         pdf.ln(2)
                         
+                        # Section 3: Unique Proposed PhD Research Directions
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To synthesize my technical skill set with your lab's mission, I propose focusing my dissertation on three core pillars: (1) integrating multi-decadal observation time-series with spatial metrics to evaluate longitudinal change; (2) developing scalable Python and GEE workflows tailored to {focus.lower()} for rapid spatial mapping; and (3) applying advanced spatial statistics to simulate predictive environmental and social risk surfaces.")
+                        pdf.multi_cell(0, 3.8, f"To synthesize my technical skill set with your lab's mission in {focus.lower()}, I propose focusing my dissertation on three core pillars: (1) integrating multi-decadal observation time-series with spatial metrics to evaluate longitudinal change; (2) developing scalable Python and GEE workflows tailored to {focus.lower()} for rapid spatial mapping; and (3) applying advanced spatial statistics to simulate predictive environmental and social risk surfaces.")
                         pdf.ln(2)
                         
+                        # Section 4: Conclusion
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
@@ -284,7 +294,7 @@ with tab2:
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated mentor-guided A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.success(f"Successfully generated highly tailored, unique A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
