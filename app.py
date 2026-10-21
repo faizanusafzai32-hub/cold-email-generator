@@ -31,22 +31,41 @@ def clean_pdf_text(text):
                 .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
-def advanced_clean_focus(raw_text):
+def precise_keyword_focus(raw_text):
     if not isinstance(raw_text, str) or not raw_text.strip():
         return "Spatial Analysis and Environmental Modeling"
     
-    # Strip common conversational or bio prefixes completely
-    cleaned = re.sub(r'^(he focuses on|she focuses on|his research|her research|interests include|research interests|geography and|focuses on the intersections of)\s*', '', raw_text, flags=re.IGNORECASE)
-    cleaned = re.sub(r'\b(the intersections of|natural resource use)\b', '', cleaned, flags=re.IGNORECASE)
+    # Convert to lowercase for uniform processing
+    text = raw_text.lower()
     
-    # Remove extra spaces and punctuation
-    cleaned = re.sub(r'\s+', ' ', cleaned).strip(" ,.-;")
-    
-    if not cleaned:
-        cleaned = raw_text
+    # Clean out long conversational prefixes and filler phrases
+    fillers = [
+        "he focuses on the intersections of", "she focuses on the intersections of",
+        "he focuses on", "she focuses on", "his research", "her research",
+        "interests include", "research interests", "geography and",
+        "interdisciplinary applied gis", "qualitative and quantitative methods",
+        "natural resource use", "the building of", "globalization", 
+        "territoriality, identity and culture", "academic interests"
+    ]
+    for f in fillers:
+        text = text.replace(f, "")
         
-    # Capitalize nicely
-    return cleaned.title()
+    # Extract key high-level concepts if specific long strings exist
+    if "sustainability" in text or "political ecology" in text:
+        return "Political Ecology and Sustainability"
+    elif "gis education" in text or "geography education" in text:
+        return "GIS Education and Spatial Methods"
+    elif "cartography" in text or "geovisualization" in text:
+        return "Cartography and Geovisualization"
+    
+    # Fallback: Clean remaining text, split and take first 3-4 clean words
+    cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
+    words = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
+    
+    if words:
+        return " ".join(words[:4]).title()
+    
+    return "Spatial Analysis and Environmental Modeling"
 
 # ==================== TAB 1 ====================
 with tab1:
@@ -88,9 +107,9 @@ with tab1:
             for prof in professors_data:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                focus_clean = advanced_clean_focus(prof['expertise'])
+                focus_clean = precise_keyword_focus(prof['expertise'])
                 
-                subject = f"Prospective PhD Inquiry: {focus_clean[:40]} — Faizan Ahmad"
+                subject = f"Prospective PhD Inquiry: {focus_clean} — Faizan Ahmad"
                 
                 pub_context = f" Noting your work on {prof['pub_ref']}," if prof['pub_ref'] else f" Building upon my peer-reviewed research in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics,"
                 
@@ -156,7 +175,7 @@ with tab2:
                             if match:
                                 focus = match.group(1).strip()
                                 
-                        focus = advanced_clean_focus(focus)
+                        focus = precise_keyword_focus(focus)
                         
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
