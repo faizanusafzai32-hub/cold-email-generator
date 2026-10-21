@@ -30,6 +30,37 @@ def clean_pdf_text(text):
                 .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
+def parse_manual_text(text_input):
+    professors = []
+    blocks = text_input.strip().split('\n\n')
+    
+    for block in blocks:
+        lines = [l.strip() for l in block.split('\n') if l.strip()]
+        if not lines:
+            continue
+            
+        name = "Professor"
+        email = "contact@university.edu"
+        expertise = "Geospatial Analysis and Environmental Modeling"
+        
+        for line in lines:
+            if "@" in line:
+                email = line.strip()
+            elif any(title in line.lower() for title in ["dr.", "prof", "ph.d", "department", "chair"]):
+                name = line.replace("Dr.", "").replace("Prof.", "").strip()
+            elif len(line.split()) in [2, 3] and name == "Professor" and not any(char.isdigit() for char in line):
+                name = line.strip()
+            elif len(line) > 15 and "http" not in line.lower():
+                expertise = line
+                
+        professors.append({
+            "name": clean_pdf_text(name),
+            "email": clean_pdf_text(email),
+            "expertise": clean_pdf_text(expertise)
+        })
+        
+    return professors
+
 def scrape_url_smartly(url):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
@@ -71,14 +102,14 @@ def scrape_url_smartly(url):
         if not name:
             name = "Faculty Member"
             
-        expertise = "Geospatial modeling and remote sensing"
+        expertise = "Geospatial Modeling and Environmental Systems"
         meta_desc = soup.find("meta", attrs={"name": "description"})
         if meta_desc and meta_desc.get("content"):
-            expertise = meta_desc["content"][:120]
+            expertise = meta_desc["content"][:100]
         else:
             for p in soup.find_all('p'):
                 p_text = p.get_text().strip()
-                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "modeling", "climate", "planning"]):
+                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "modeling", "climate", "demography", "health", "urban"]):
                     if len(p_text) > 20 and len(p_text) < 150:
                         expertise = p_text
                         break
@@ -101,7 +132,7 @@ with tab1:
     if input_method == "🔗 URL Links (Multiple Web Scraping)":
         urls_input = st.text_area(
             "University / Personal Website Links (One URL per line):",
-            placeholder="www.utdallas.edu/~briggs/\nhttps://profiles.utdallas.edu/ywchun",
+            placeholder="https://profiles.utdallas.edu/yingyi.lin",
             height=150
         )
         
@@ -127,16 +158,11 @@ with tab1:
             else:
                 st.warning("Could not extract profiles automatically from these links.")
     else:
-        prof_input = st.text_area("Faculty Directory Text:", placeholder="Paste copied faculty text here...", height=200)
+        prof_input = st.text_area("Faculty Details Text (Name, Email, Expertise):", placeholder="Yingyi Lin\nYingyi.Lin@UTDallas.edu\nDemography, development, health", height=200)
         if prof_input.strip():
-            lines = [l.strip() for l in prof_input.split('\n') if l.strip()]
-            professors.append({
-                "name": clean_pdf_text(lines[0] if lines else "Professor"),
-                "email": clean_pdf_text(next((l for l in lines if "@" in l), "prof@uni.ca")),
-                "expertise": "Geospatial modeling and remote sensing"
-            })
+            professors = parse_manual_text(prof_input)
             if professors:
-                st.success(f"Extracted {len(professors)} profile(s) from text!")
+                st.success(f"Extracted {len(professors)} profile(s) successfully from text!")
 
     if st.button("📥 Download Emails Excel File"):
         if not professors:
@@ -146,16 +172,12 @@ with tab1:
             for prof in professors:
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                topic = prof['expertise'].split(',')[0][:30].title()
+                topic = prof['expertise'].split(',')[0][:35].title()
                 
-                # 1. Multiple Subject Lines options generated professionally
-                subject_lines = (
-                    f"1. Prospective PhD Inquiry: {topic} & Spatial Modeling — Faizan Ahmad\n"
-                    f"2. PhD Applicant (RA/Fellowship): Integrating GEE & Python in {topic} — Faizan Ahmad\n"
-                    f"3. Research Inquiry: Aligning Remote Sensing & Spatial Statistics with Your Lab — Faizan Ahmad"
-                )
+                # Single Clean Subject Line mentioning professor's specific expertise
+                subject = f"Prospective PhD Inquiry: {topic} & Spatial Modeling — Faizan Ahmad"
                 
-                # 2. Impact-driven, under 200-words email body with polite RA/Fellowship inquiry
+                # Under 200 words impact-driven email body with funded position inquiry
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I have been closely following your lab's recent contributions to {prof['expertise']}. Your methodological framework aligns exceptionally well with my research background in spatial statistics and environmental analytics.\n\n"
@@ -172,7 +194,7 @@ with tab1:
                 excel_data.append({
                     "Name": prof['name'],
                     "Email Address": prof['email'],
-                    "Email Subject Options": subject_lines,
+                    "Email Subject": subject,
                     "Email Body": email_body
                 })
 
@@ -200,7 +222,7 @@ with tab2:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
             st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
-            st.dataframe(df_uploaded[["Name", "Email Address"]].head())
+            st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
             
             if st.button("📥 Generate & Download Research Statements (ZIP)"):
                 zip_buffer = io.BytesIO()
@@ -208,13 +230,13 @@ with tab2:
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     for idx, row in df_uploaded.iterrows():
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
-                        email_body = clean_pdf_text(str(row.get("Email Body", "")))
+                        subject = clean_pdf_text(str(row.get("Email Subject", "")))
                         
-                        expertise_match = re.search(r"contributions to (.*?)\. Your methodological", email_body, re.DOTALL)
-                        if expertise_match:
-                            expertise = clean_pdf_text(expertise_match.group(1))
+                        # Extract exact expertise from email subject
+                        if ":" in subject and "—" in subject:
+                            expertise = subject.split(":")[1].split("—")[0].replace("& Spatial Modeling", "").strip()
                         else:
-                            expertise = "Geospatial Modeling & Remote Sensing"
+                            expertise = "Geospatial Modeling & Environmental Systems"
                             
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
@@ -259,7 +281,7 @@ with tab2:
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Forward-Looking Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To contribute proactively to Dr. {prof_name}'s research group, I propose focusing my dissertation on the following forward-looking objectives:\n- Empirical Spatiotemporal Synthesis: Integrating multi-decadal satellite observation time-series with spatial metrics to assess longitudinal environmental change.\n- Scalable Python & GEE Analytics: Developing automated, reproducible workflows tailored to {expertise.split(',')[0].lower()} to process high-resolution spatial data efficiently.\n- Predictive Modeling Frameworks: Employing advanced spatial statistical algorithms to simulate environmental risk surfaces and support evidence-based decision-making.")
+                        pdf.multi_cell(0, 3.8, f"To contribute proactively to Dr. {prof_name}'s research group, I propose focusing my dissertation on the following forward-looking objectives:\n- Empirical Spatiotemporal Synthesis: Integrating multi-decadal satellite observation time-series with spatial metrics to assess longitudinal environmental change.\n- Scalable Python & GEE Analytics: Developing automated, reproducible workflows tailored to {expertise.lower()} to process high-resolution spatial data efficiently.\n- Predictive Modeling Frameworks: Employing advanced spatial statistical algorithms to simulate environmental risk surfaces and support evidence-based decision-making.")
                         pdf.ln(2)
                         
                         # Section 4
