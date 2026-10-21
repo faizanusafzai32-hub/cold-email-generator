@@ -3,6 +3,7 @@ import pandas as pd
 import io
 import zipfile
 from fpdf import FPDF
+import re  # Fixed: Imported 're' module to fix 'name re is not defined' error
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
 
