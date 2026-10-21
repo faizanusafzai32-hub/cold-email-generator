@@ -78,7 +78,7 @@ def scrape_url_smartly(url):
         else:
             for p in soup.find_all('p'):
                 p_text = p.get_text().strip()
-                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "modeling", "climate", "planning"]):
+                if any(kw in p_text.lower() for kw in ["research", "interest", "gis", "remote sensing", "spatial", "modeling", "climate"]):
                     if len(p_text) > 20 and len(p_text) < 150:
                         expertise = p_text
                         break
@@ -147,15 +147,15 @@ with tab1:
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 topic = prof['expertise'].split(',')[0][:35].title()
-                subject = f"Prospective PhD Inquiry: {topic} — Faizan Ahmad"
+                subject = f"Prospective PhD Student: {topic} — Faizan Ahmad"
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
-                    f"I have been following your scholarly work and recent publications focusing on {prof['expertise']}. Your contributions to spatial analytics and regional dynamics particularly interest me as I explore doctoral supervision options.\n\n"
-                    f"Drawing upon my background in spatial statistical modeling, automated Python workflows, and cloud-based Earth Observation (GEE)—alongside my recent co-authored research in the Journal for Nature Conservation (Elsevier, 2026)—I am keen to investigate how quantitative spatial frameworks can be integrated into your lab's ongoing research directions.\n\n"
-                    f"Specifically, I am interested in exploring research questions related to high-resolution spatial risk modeling and environmental systems analysis within your group. Are you currently accepting funded PhD students for upcoming terms who align with this focus? I have attached my CV and a tailored 1-page Statement of Research Interests for your review.\n\n"
-                    f"Thank you for your time and consideration.\n\n"
-                    f"Sincerely,\n"
+                    f"I hope you are doing well.\n\n"
+                    f"My name is {FAIZAN_CV_DETAILS['name']}, and I hold an {FAIZAN_CV_DETAILS['degree']} with {FAIZAN_CV_DETAILS['exp']}. I also {FAIZAN_CV_DETAILS['pub']}.\n\n"
+                    f"I am very interested in your lab’s work on {prof['expertise']}. My background in processing big spatiotemporal datasets, spatial statistical modeling, Python workflows, and Google Earth Engine (GEE) aligns strongly with your current research focus.\n\n"
+                    f"Are you currently accepting funded PhD students for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
+                    f"With Kind Regards,\n"
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
                     f"WhatsApp/Mob: {FAIZAN_CV_DETAILS['phone']}\n"
@@ -203,7 +203,7 @@ with tab2:
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
-                        expertise_match = re.search(r"publications focusing on (.*?)\. Your contributions", email_body, re.DOTALL)
+                        expertise_match = re.search(r"lab’s work on (.*?)\. My background", email_body, re.DOTALL)
                         if expertise_match:
                             expertise = clean_pdf_text(expertise_match.group(1))
                         else:
@@ -215,6 +215,7 @@ with tab2:
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
+                        # Standard A4 Page Setup with proper margins
                         pdf = FPDF(orientation='P', unit='mm', format='A4')
                         pdf.set_margins(left=15, top=15, right=15)
                         pdf.add_page()
@@ -234,4 +235,46 @@ with tab2:
                         
                         # Research Focus
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.multi_cell(0, 4, f"Research Focus: Integrating Spatial Analytics, Remote Sensing, and {expertise}", align="L")
+                        pdf.multi_cell(0, 4, f"Research Focus: Advanced Spatiotemporal Modeling, Remote Sensing Analytics, and {expertise}", align="L")
+                        pdf.ln(2)
+                        
+                        # Section 1
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "1. Academic & Professional Background", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, "I hold a Master of Science in Remote Sensing & GIS and a Bachelor of Science in Geoinformatics, complemented by over 5.5 years of professional experience as a GIS Specialist. My technical competencies span advanced spatiotemporal data analysis, automated geospatial processing workflows in Python, and cloud-based Earth Observation analytics via Google Earth Engine (GEE). My foundational research capability is explicitly demonstrated by my 2026 peer-reviewed publication in the Journal for Nature Conservation (Elsevier), where I utilized rigorous spatial statistical modeling to evaluate environmental land dynamics and ecological responses.")
+                        pdf.ln(2)
+                        
+                        # Section 2
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "2. Motivation & Alignment with Lab Research", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, f"My doctoral research aspirations center on leveraging high-resolution satellite remote sensing, spatial statistics, and machine learning algorithms to model complex environmental interactions and risk surfaces. I am particularly drawn to the pioneering work conducted in {prof_name}'s research lab focusing specifically on {expertise}. Your lab's contributions to spatial analytics and regional dynamics resonate seamlessly with my professional background and long-term academic goals. I am eager to integrate cloud-based big data analytics with your ongoing projects to push the boundaries of predictive environmental modeling.")
+                        pdf.ln(2)
+                        
+                        # Section 3
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, f"To contribute meaningfully to {prof_name}'s laboratory objectives, I propose focusing my doctoral research on the following interconnected directions:\n- High-Resolution Spatiotemporal Modeling: Synthesizing multi-decadal satellite observation time-series with high-density spatial vector datasets to evaluate long-term environmental trends.\n- Automated Cloud-Native Geospatial Workflows: Developing scalable Python and Google Earth Engine (GEE) pipelines tailored to {expertise.split(',')[0].lower()} for rapid, large-scale spatial mapping.\n- Predictive Machine Learning Frameworks: Applying advanced spatial statistical techniques and machine learning algorithms to quantify environmental risks and support evidence-based decision making.")
+                        pdf.ln(2)
+                        
+                        # Section 4
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "4. Conclusion", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, f"By bringing my 5.5+ years of practical GIS expertise, robust Python programming skills, and a proven publication record to {prof_name}'s lab, I am fully prepared to drive impactful research. I aim to develop robust spatial frameworks that advance environmental analytics, risk mitigation, and sustainable landscape management.")
+                        
+                        pdf_bytes = bytes(pdf.output())
+                        zip_file.writestr(file_name, pdf_bytes)
+                        
+                zip_buffer.seek(0)
+                st.success(f"Successfully generated professional A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.download_button(
+                    label="Download Research Statements (ZIP)",
+                    data=zip_buffer,
+                    file_name="Research_Statements_ZIP.zip",
+                    mime="application/zip"
+                )
+        except Exception as e:
+            st.error(f"Error reading Excel file: {e}")
