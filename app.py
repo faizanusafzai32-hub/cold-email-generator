@@ -6,14 +6,17 @@ from fpdf import FPDF
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
 
-FAIZAN_CV_DETAILS = {
+# Faizan Ahmad's Master Profile Source of Truth
+FAIZAN_CV = {
     "name": "Faizan Ahmad",
-    "phone": "+92 349 9343568",
+    "phone": "+92 312 9380985",
     "email": "faizan.usafzai32@gmail.com",
     "linkedin": "www.linkedin.com/in/faizan-ahmad-98990b183",
-    "degree": "M.Sc. in Remote Sensing & GIS and B.Sc. in GeoInformatics",
-    "exp": "5.5+ years of professional experience in GIS/Remote Sensing, Python, SQL, Google Earth Engine (GEE), and spatial modeling",
-    "pub": "co-authored peer-reviewed research in the Journal for Nature Conservation (Elsevier) focusing on spatiotemporal LULC dynamics and habitat suitability modeling"
+    "degree": "M.Sc. Remote Sensing & GIS (IST, Islamabad) & B.Sc. Geo-Informatics",
+    "exp": "5.5+ years of professional and academic experience in geospatial data analytics, remote sensing, and environmental risk assessment",
+    "skills": "advanced Python, SQL, Google Earth Engine (GEE), ArcGIS Pro, QGIS, and spatial statistical modeling (MaxEnt, GLM)",
+    "pub": "co-authored peer-reviewed research in the Journal for Nature Conservation (Elsevier) focusing on spatiotemporal LULC dynamics and habitat suitability modeling",
+    "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk, alongside extensive project work in hydrological modeling, soil erosion (RUSLE), and spatial risk analysis"
 }
 
 tab1, tab2 = st.tabs(["📧 1. Multi-Professor Structured Form & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
@@ -47,7 +50,7 @@ with tab1:
             p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Demography, spatial health, and urban dynamics")
             p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Recent work on population health modeling")
             
-        p_link = st.text_input(f"Profile Link {i+1} (For your reference/verification):", key=f"link_{i}", placeholder="e.g., https://profiles.utdallas.edu/yingyi.lin")
+        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://profiles.utdallas.edu/yingyi.lin")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
@@ -72,19 +75,19 @@ with tab1:
                 # 1 Professional Subject line targeting professor's specific work
                 subject = f"Prospective PhD Inquiry: {focus_clean[:40]} — Faizan Ahmad"
                 
-                # Strong 2-paragraph professional email body aligned with professor's focus & profile
-                pub_mention = f" Building upon my recent co-authored research published in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics," if not prof['pub_ref'] else f" Noting your work on {prof['pub_ref']},"
+                # Dynamic CV alignment based on professor's focus
+                pub_context = f" Noting your work on {prof['pub_ref']}," if prof['pub_ref'] else f" Building upon my peer-reviewed research in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics,"
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
-                    f"I am writing to express my strong interest in pursuing a doctoral degree under your supervision, focusing on your research domain in {focus_clean}.{pub_mention} Your lab's methodological contributions to spatial analytics provide an ideal framework for advancing empirical geographical research.\n\n"
+                    f"I am writing to express my strong interest in pursuing a doctoral degree under your supervision, focusing on your research domain in {focus_clean}.{pub_context} Your lab's methodological contributions provide an inspiring framework for advancing empirical geographical and spatial research.\n\n"
                     f"With an M.Sc. in Remote Sensing & GIS, 5.5+ years of practical expertise in Python, SQL, and Google Earth Engine (GEE), and a strong foundation in spatial statistical modeling, I am eager to apply quantitative spatial frameworks to your ongoing projects. Are you currently accepting PhD students with funded positions (RA, TA, or Fellowships) in your lab for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
                     f"Thank you for your time and consideration.\n\n"
                     f"Sincerely,\n"
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
-                    f"WhatsApp/Mob: {FAIZAN_CV_DETAILS['phone']}\n"
-                    f"{FAIZAN_CV_DETAILS['linkedin']}"
+                    f"WhatsApp/Mob: {FAIZAN_CV['phone']}\n"
+                    f"{FAIZAN_CV['linkedin']}"
                 )
                 
                 excel_rows.append({
@@ -150,11 +153,11 @@ with tab2:
                         pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                         
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, FAIZAN_CV_DETAILS["name"], new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 5, FAIZAN_CV["name"], new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.set_font("Helvetica", size=9)
                         pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, f"Mob: {FAIZAN_CV_DETAILS['phone']} | Email: {FAIZAN_CV_DETAILS['email']}", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, f"{FAIZAN_CV_DETAILS['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, f"{FAIZAN_CV['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
                         
                         # Research Focus
