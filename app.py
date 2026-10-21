@@ -14,8 +14,8 @@ FAIZAN_CV_DETAILS = {
     "phone": "+92 349 9343568",
     "email": "faizan.usafzai32@gmail.com",
     "linkedin": "www.linkedin.com/in/faizan-ahmad-98990b183",
-    "degree": "MS in Remote Sensing & GIS and Bachelor of Science in GeoInformatics",
-    "exp": "5.5+ years of experience in spatial data analytics, Python programming, and Google Earth Engine (GEE)",
+    "degree": "M.Sc. in Remote Sensing & GIS and B.Sc. in Geoinformatics",
+    "exp": "5.5+ years of experience in spatial data analytics, Python, SQL, Google Earth Engine (GEE), and spatial modeling",
     "pub": "co-authored a 2026 peer-reviewed paper in the Journal for Nature Conservation (Elsevier) focused on spatial statistical modeling and ecological dynamics"
 }
 
@@ -94,13 +94,13 @@ def scrape_url_smartly(url):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.write("Extract targeted faculty profiles or personal website details, then download the structured Excel sheet.")
+    st.write("Aapke mentor-style framework ke mutabiq faculty profiles scrape karke professional Excel sheet download karein.")
     input_method = st.radio("Select Input Method:", ["🔗 URL Links (Multiple Web Scraping)", "📝 Manual Text Paste"])
     professors = []
 
     if input_method == "🔗 URL Links (Multiple Web Scraping)":
         urls_input = st.text_area(
-            "University / Personal Website Links (One URL per line or separated by commas):",
+            "University / Personal Website Links (One URL per line):",
             placeholder="www.utdallas.edu/~briggs/\nhttps://profiles.utdallas.edu/ywchun",
             height=150
         )
@@ -146,16 +146,22 @@ with tab1:
             for prof in professors:
                 full_name = prof['name'].replace("Dr. ", "").replace("Dr ", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                topic = prof['expertise'].split(',')[0][:35].title()
-                subject = f"Prospective PhD Inquiry: {topic} — Faizan Ahmad"
+                topic = prof['expertise'].split(',')[0][:30].title()
                 
-                # Updated email body with professional funded positions inquiry line
+                # 1. Multiple Subject Lines options generated professionally
+                subject_lines = (
+                    f"1. Prospective PhD Inquiry: {topic} & Spatial Modeling — Faizan Ahmad\n"
+                    f"2. PhD Applicant (RA/Fellowship): Integrating GEE & Python in {topic} — Faizan Ahmad\n"
+                    f"3. Research Inquiry: Aligning Remote Sensing & Spatial Statistics with Your Lab — Faizan Ahmad"
+                )
+                
+                # 2. Impact-driven, under 200-words email body with polite RA/Fellowship inquiry
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
-                    f"I have been following your scholarly work and recent publications focusing on {prof['expertise']}. Your contributions to spatial analytics and regional dynamics particularly interest me as I explore doctoral supervision options.\n\n"
-                    f"Drawing upon my background in spatial statistical modeling, automated Python workflows, and cloud-based Earth Observation (GEE)—alongside my recent co-authored research in the Journal for Nature Conservation (Elsevier, 2026)—I am keen to investigate how quantitative spatial frameworks can be integrated into your lab's ongoing research directions.\n\n"
-                    f"Specifically, I am interested in exploring research questions related to high-resolution spatial risk modeling and environmental systems analysis within your group. Are you currently accepting PhD students with funded positions (RA or Fellowships) in your lab for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
-                    f"Thank you for your time and consideration.\n\n"
+                    f"I have been closely following your lab's recent contributions to {prof['expertise']}. Your methodological framework aligns exceptionally well with my research background in spatial statistics and environmental analytics.\n\n"
+                    f"With an M.Sc. in Remote Sensing & GIS, 5.5+ years of expertise in Python, SQL, and GEE, and a peer-reviewed publication in the Journal for Nature Conservation (Elsevier, 2026), I am eager to apply quantitative spatial modeling to your ongoing projects.\n\n"
+                    f"Are you currently accepting PhD students with funded positions (RA or Fellowships) in your lab for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
+                    f"Thank you for your time and guidance.\n\n"
                     f"Sincerely,\n"
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
@@ -166,7 +172,7 @@ with tab1:
                 excel_data.append({
                     "Name": prof['name'],
                     "Email Address": prof['email'],
-                    "Email Subject": subject,
+                    "Email Subject Options": subject_lines,
                     "Email Body": email_body
                 })
 
@@ -194,7 +200,7 @@ with tab2:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
             st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
-            st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
+            st.dataframe(df_uploaded[["Name", "Email Address"]].head())
             
             if st.button("📥 Generate & Download Research Statements (ZIP)"):
                 zip_buffer = io.BytesIO()
@@ -204,14 +210,11 @@ with tab2:
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
-                        expertise_match = re.search(r"publications focusing on (.*?)\. Your contributions", email_body, re.DOTALL)
+                        expertise_match = re.search(r"contributions to (.*?)\. Your methodological", email_body, re.DOTALL)
                         if expertise_match:
                             expertise = clean_pdf_text(expertise_match.group(1))
                         else:
-                            subj = clean_pdf_text(str(row.get("Email Subject", "")))
-                            expertise = subj.split(":")[1].split("—")[0].strip() if ":" in subj else "Geospatial Modeling & Remote Sensing"
-                            
-                        expertise = re.sub(r'\s*[-–—]\s*Faizan.*$', '', expertise, flags=re.IGNORECASE).strip()
+                            expertise = "Geospatial Modeling & Remote Sensing"
                             
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
@@ -242,34 +245,34 @@ with tab2:
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, "My academic training includes an M.Sc. in Remote Sensing & GIS and a B.Sc. in Geoinformatics, supported by over 5.5 years of practical experience as a GIS Specialist. My core competencies lie in building automated Python processing pipelines, managing large spatiotemporal vector/raster datasets, and executing cloud-native Earth Observation analytics using Google Earth Engine (GEE). Demonstrating my capacity for independent academic research, I recently co-authored a peer-reviewed study published in the Journal for Nature Conservation (Elsevier, 2026) focusing on spatial statistical modeling of environmental dynamics.")
+                        pdf.multi_cell(0, 3.8, "My academic training includes an M.Sc. in Remote Sensing & GIS and a B.Sc. in Geoinformatics, supported by over 5.5 years of practical experience as a GIS Specialist. My core competencies lie in building automated Python and SQL processing pipelines, managing large spatiotemporal datasets, and executing cloud-native Earth Observation analytics using Google Earth Engine (GEE). Demonstrating my capacity for independent academic research, I co-authored a peer-reviewed study published in the Journal for Nature Conservation (Elsevier, 2026) focusing on spatial statistical modeling of environmental dynamics.")
                         pdf.ln(2)
                         
                         # Section 2
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, f"2. Alignment with Dr. {prof_name}'s Lab Research", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"My doctoral research goals are directly inspired by the scholarly literature and lab contributions led by Dr. {prof_name} in the domain of {expertise}. Specifically, your empirical studies and methodological frameworks provide an ideal foundation for my ambition to apply advanced spatial statistics and machine learning to complex geographical systems. I am eager to bridge my technical background in big data geospatial analytics with your lab's ongoing investigations to evaluate structural environmental patterns and policy outcomes.")
+                        pdf.multi_cell(0, 3.8, f"My doctoral research goals are directly inspired by the scholarly literature and lab contributions led by Dr. {prof_name} in the domain of {expertise}. Specifically, your empirical studies provide an ideal foundation for my ambition to apply advanced spatial statistics and machine learning to complex geographical systems. I am eager to bridge my technical background in big data geospatial analytics with your lab's ongoing investigations.")
                         pdf.ln(2)
                         
                         # Section 3
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Forward-Looking Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To contribute proactively to Dr. {prof_name}'s research group, I propose focusing my dissertation on the following forward-looking objectives:\n- Empirical Spatiotemporal Synthesis: Integrating multi-decadal satellite observation time-series with socioeconomic and physical spatial metrics to assess longitudinal environmental change.\n- Scalable Python & GEE Analytics: Developing automated, reproducible workflows tailored to {expertise.split(',')[0].lower()} to process high-resolution spatial data efficiently.\n- Predictive Modeling Frameworks: Employing advanced spatial statistical algorithms to simulate environmental risk surfaces and support evidence-based planning and decision-making.")
+                        pdf.multi_cell(0, 3.8, f"To contribute proactively to Dr. {prof_name}'s research group, I propose focusing my dissertation on the following forward-looking objectives:\n- Empirical Spatiotemporal Synthesis: Integrating multi-decadal satellite observation time-series with spatial metrics to assess longitudinal environmental change.\n- Scalable Python & GEE Analytics: Developing automated, reproducible workflows tailored to {expertise.split(',')[0].lower()} to process high-resolution spatial data efficiently.\n- Predictive Modeling Frameworks: Employing advanced spatial statistical algorithms to simulate environmental risk surfaces and support evidence-based decision-making.")
                         pdf.ln(2)
                         
                         # Section 4
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"By combining my rigorous technical skill set in spatial modeling, demonstrated publishing experience, and focused alignment with Dr. {prof_name}'s research themes, I am fully prepared to make a substantive scholarly contribution to your team from day one.")
+                        pdf.multi_cell(0, 3.8, f"By combining my rigorous technical skill set in spatial modeling, demonstrated publishing experience, and focused alignment with Dr. {prof_name}'s research themes, I am fully prepared to make a substantive scholarly contribution to your team as a funded PhD researcher.")
                         
                         pdf_bytes = bytes(pdf.output())
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated highly professional, professor-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.success(f"Successfully generated mentor-guided A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
