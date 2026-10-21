@@ -51,7 +51,7 @@ def parse_profile_text(raw_text):
 
 def scrape_url_smartly(url):
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         response = requests.get(url, headers=headers, timeout=10)
         if response.status_code != 200:
             return None
@@ -112,7 +112,7 @@ def scrape_url_smartly(url):
 # ==================== TAB 1 ====================
 with tab1:
     st.write("Sirf Professor Name, Email, aur Research Focus ke sath precision-tailored email package banayein.")
-    input_method = st.radio("Select Input Method:", ["✍️ Direct Manual Form (Recommended)", "📝 Raw Text Paste", "🔗 URL Link Scraping"])
+    input_method = st.radio("Select Input Method:", ["✍️ Direct Manual Form (Recommended)", "🔗 URL Link Scraping", "📝 Raw Text Paste"])
     professors = []
 
     if input_method == "✍️ Direct Manual Form (Recommended)":
@@ -132,19 +132,7 @@ with tab1:
                 "lab": clean_pdf_text(m_lab)
             })
 
-    elif input_method == "📝 Raw Text Paste":
-        prof_input = st.text_area("Paste Professor Details (Name, Email, Focus):", placeholder="Yingyi Lin\nYingyi.Lin@UTDallas.edu\nDemography, public health, and spatial population dynamics", height=130)
-        if prof_input.strip():
-            p_name, p_email, p_focus = parse_profile_text(prof_input)
-            professors.append({
-                "name": p_name,
-                "email": p_email,
-                "focus": p_focus,
-                "lab": ""
-            })
-            st.success("Extracted 1 profile successfully!")
-
-    else:
+    elif input_method == "🔗 URL Link Scraping":
         url_input = st.text_input("Faculty Web Link:", placeholder="https://profiles.utdallas.edu/yingyi.lin")
         if url_input.strip():
             url = url_input.strip()
@@ -155,10 +143,24 @@ with tab1:
                 professors.append({
                     "name": res["name"],
                     "email": res["email"],
-                    "focus": res["expertise"],
+                    "focus": res["expertise"] if "expertise" in res else res["focus"],
                     "lab": ""
                 })
-                st.success("Scraped profile successfully!")
+                st.success(f"Successfully scraped: {res['name']} ({res['email']})")
+            else:
+                st.error("Could not scrape this URL. Please use Manual Form or Text Paste.")
+
+    else:
+        prof_input = st.text_area("Paste Professor Details (Name, Email, Focus):", placeholder="Yingyi Lin\nYingyi.Lin@UTDallas.edu\nDemography, public health, and spatial population dynamics", height=130)
+        if prof_input.strip():
+            p_name, p_email, p_focus = parse_profile_text(prof_input)
+            professors.append({
+                "name": p_name,
+                "email": p_email,
+                "focus": p_focus,
+                "lab": ""
+            })
+            st.success("Extracted 1 profile successfully!")
 
     if st.button("📥 Generate & Download Excel File"):
         if not professors:
@@ -171,10 +173,8 @@ with tab1:
                 focus_clean = prof['focus'].strip()
                 lab_ref = f" in your {prof.get('lab', '').strip()} research group" if prof.get('lab', '').strip() else ""
                 
-                # Single Clean Subject Line
                 subject = f"Prospective PhD Inquiry: {focus_clean[:40]} — Faizan Ahmad"
                 
-                # Under 200 words impact-driven email body with third-person appreciation & funded position inquiry
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I have been following your scholarly work and publications focusing on {focus_clean}{lab_ref}. Your lab's contributions to spatial analytics provide an inspiring framework for advanced geographical research.\n\n"
@@ -192,8 +192,7 @@ with tab1:
                     "Name": prof['name'],
                     "Email Address": prof['email'],
                     "Email Subject": subject,
-                    "Email Body": email_body,
-                    "Research Focus": focus_clean
+                    "Email Body": email_body
                 })
 
             df = pd.DataFrame(excel_data)
@@ -228,8 +227,13 @@ with tab2:
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
                     for idx, row in df_uploaded.iterrows():
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
-                        focus = clean_pdf_text(str(row.get("Research Focus", "Spatial Analysis")))
+                        subject = clean_pdf_text(str(row.get("Email Subject", "")))
                         
+                        if ":" in subject and "—" in subject:
+                            focus = subject.split(":")[1].split("—")[0].strip()
+                        else:
+                            focus = "Spatial Analysis and Environmental Modeling"
+                            
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
