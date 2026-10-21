@@ -31,19 +31,21 @@ def clean_pdf_text(text):
                 .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
-def smart_clean_focus(raw_text):
+def advanced_clean_focus(raw_text):
     if not isinstance(raw_text, str) or not raw_text.strip():
         return "Spatial Analysis and Environmental Modeling"
     
-    # Remove messy sentences or long bio prefixes
-    cleaned = re.sub(r'^(He focuses on|She focuses on|His research|Her research|Interests include|Research Interests)\s*:?ahu?', '', raw_text, flags=re.IGNORECASE).strip()
+    # Strip common conversational or bio prefixes completely
+    cleaned = re.sub(r'^(he focuses on|she focuses on|his research|her research|interests include|research interests|geography and|focuses on the intersections of)\s*', '', raw_text, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\b(the intersections of|natural resource use)\b', '', cleaned, flags=re.IGNORECASE)
     
-    # If text is too long (like a paragraph), extract key phrases or limit words
-    words = cleaned.split()
-    if len(words) > 8:
-        # Take first 6-8 meaningful words or look for keywords
-        cleaned = " ".join(words[:7]).strip(".,;")
+    # Remove extra spaces and punctuation
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip(" ,.-;")
+    
+    if not cleaned:
+        cleaned = raw_text
         
+    # Capitalize nicely
     return cleaned.title()
 
 # ==================== TAB 1 ====================
@@ -86,9 +88,9 @@ with tab1:
             for prof in professors_data:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                focus_clean = smart_clean_focus(prof['expertise'])
+                focus_clean = advanced_clean_focus(prof['expertise'])
                 
-                subject = f"Prospective PhD Inquiry: {focus_clean} — Faizan Ahmad"
+                subject = f"Prospective PhD Inquiry: {focus_clean[:40]} — Faizan Ahmad"
                 
                 pub_context = f" Noting your work on {prof['pub_ref']}," if prof['pub_ref'] else f" Building upon my peer-reviewed research in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics,"
                 
@@ -154,7 +156,7 @@ with tab2:
                             if match:
                                 focus = match.group(1).strip()
                                 
-                        focus = smart_clean_focus(focus)
+                        focus = advanced_clean_focus(focus)
                         
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
