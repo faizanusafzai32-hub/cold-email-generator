@@ -149,7 +149,6 @@ with tab1:
                 topic = prof['expertise'].split(',')[0][:35].title()
                 subject = f"Prospective PhD Inquiry: {topic} — Faizan Ahmad"
                 
-                # Updated professional, non-repetitive email body addressing professor's exact feedback
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I have been following your scholarly work and recent publications focusing on {prof['expertise']}. Your contributions to spatial analytics and regional dynamics particularly interest me as I explore doctoral supervision options.\n\n"
@@ -160,7 +159,7 @@ with tab1:
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
                     f"WhatsApp/Mob: {FAIZAN_CV_DETAILS['phone']}\n"
-                    f"{FAIZ_CV_DETAILS['linkedin']}"
+                    f"{FAIZAN_CV_DETAILS['linkedin']}"
                 )
                 
                 excel_data.append({
@@ -216,7 +215,6 @@ with tab2:
                         clean_prof_name = prof_name.replace("Dr. ", "").replace("Dr ", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
-                        # Standard A4 Page Setup with proper margins
                         pdf = FPDF(orientation='P', unit='mm', format='A4')
                         pdf.set_margins(left=15, top=15, right=15)
                         pdf.add_page()
@@ -237,45 +235,3 @@ with tab2:
                         # Research Focus
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.multi_cell(0, 4, f"Research Focus: Integrating Spatial Analytics, Remote Sensing, and {expertise}", align="L")
-                        pdf.ln(2)
-                        
-                        # Section 1
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, "My academic training includes an M.Sc. in Remote Sensing & GIS and a B.Sc. in Geoinformatics, supported by over 5.5 years of practical experience as a GIS Specialist. My core competencies lie in building automated Python processing pipelines, managing large spatiotemporal vector/raster datasets, and executing cloud-native Earth Observation analytics using Google Earth Engine (GEE). Demonstrating my capacity for independent academic research, I recently co-authored a peer-reviewed study published in the Journal for Nature Conservation (Elsevier, 2026) focusing on spatial statistical modeling of environmental dynamics.")
-                        pdf.ln(2)
-                        
-                        # Section 2
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, f"2. Alignment with Dr. {prof_name}'s Lab Research", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"My doctoral research goals are directly inspired by the scholarly literature and lab contributions led by Dr. {prof_name} in the domain of {expertise}. Specifically, your empirical studies and methodological frameworks provide an ideal foundation for my ambition to apply advanced spatial statistics and machine learning to complex geographical systems. I am eager to bridge my technical background in big data geospatial analytics with your lab's ongoing investigations to evaluate structural environmental patterns and policy outcomes.")
-                        pdf.ln(2)
-                        
-                        # Section 3
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "3. Forward-Looking Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To contribute proactively to Dr. {prof_name}'s research group, I propose focusing my dissertation on the following forward-looking objectives:\n- Empirical Spatiotemporal Synthesis: Integrating multi-decadal satellite observation time-series with socioeconomic and physical spatial metrics to assess longitudinal environmental change.\n- Scalable Python & GEE Analytics: Developing automated, reproducible workflows tailored to {expertise.split(',')[0].lower()} to process high-resolution spatial data efficiently.\n- Predictive Modeling Frameworks: Employing advanced spatial statistical algorithms to simulate environmental risk surfaces and support evidence-based planning and decision-making.")
-                        pdf.ln(2)
-                        
-                        # Section 4
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"By combining my rigorous technical skill set in spatial modeling, demonstrated publishing experience, and focused alignment with Dr. {prof_name}'s research themes, I am fully prepared to make a substantive scholarly contribution to your team from day one.")
-                        
-                        pdf_bytes = bytes(pdf.output())
-                        zip_file.writestr(file_name, pdf_bytes)
-                        
-                zip_buffer.seek(0)
-                st.success(f"Successfully generated highly professional, professor-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
-                st.download_button(
-                    label="Download Research Statements (ZIP)",
-                    data=zip_buffer,
-                    file_name="Research_Statements_ZIP.zip",
-                    mime="application/zip"
-                )
-        except Exception as e:
-            st.error(f"Error reading Excel file: {e}")
