@@ -3,7 +3,7 @@ import pandas as pd
 import io
 import zipfile
 from fpdf import FPDF
-import re  # Fixed: Imported 're' module to fix 'name re is not defined' error
+import re
 
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
 
@@ -31,6 +31,21 @@ def clean_pdf_text(text):
                 .replace('•', '-')
                 .encode('latin-1', 'replace').decode('latin-1'))
 
+def smart_clean_focus(raw_text):
+    if not isinstance(raw_text, str) or not raw_text.strip():
+        return "Spatial Analysis and Environmental Modeling"
+    
+    # Remove messy sentences or long bio prefixes
+    cleaned = re.sub(r'^(He focuses on|She focuses on|His research|Her research|Interests include|Research Interests)\s*:?ahu?', '', raw_text, flags=re.IGNORECASE).strip()
+    
+    # If text is too long (like a paragraph), extract key phrases or limit words
+    words = cleaned.split()
+    if len(words) > 8:
+        # Take first 6-8 meaningful words or look for keywords
+        cleaned = " ".join(words[:7]).strip(".,;")
+        
+    return cleaned.title()
+
 # ==================== TAB 1 ====================
 with tab1:
     st.write("Yahan aap 1 se 5 ya uss se zyada professors ki details sequential form mein enter karke targeted email package (Excel) generate kar sakte hain.")
@@ -45,13 +60,13 @@ with tab1:
         
         col1, col2 = st.columns(2)
         with col1:
-            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Yingyi Lin")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., Yingyi.Lin@UTDallas.edu")
+            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. George White")
+            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., George.White@sdstate.edu")
         with col2:
-            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Demography, spatial health, and urban dynamics")
-            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Recent work on population health modeling")
+            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Political ecology, sustainability, political geography")
+            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Recent work on natural resource use")
             
-        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://profiles.utdallas.edu/yingyi.lin")
+        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://www.sdstate.edu/directory/george-white")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
@@ -71,12 +86,10 @@ with tab1:
             for prof in professors_data:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                focus_clean = prof['expertise']
+                focus_clean = smart_clean_focus(prof['expertise'])
                 
-                # 1 Professional Subject line targeting professor's specific work
-                subject = f"Prospective PhD Inquiry: {focus_clean[:40]} — Faizan Ahmad"
+                subject = f"Prospective PhD Inquiry: {focus_clean} — Faizan Ahmad"
                 
-                # Dynamic CV alignment based on professor's focus
                 pub_context = f" Noting your work on {prof['pub_ref']}," if prof['pub_ref'] else f" Building upon my peer-reviewed research in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics,"
                 
                 email_body = (
@@ -141,6 +154,8 @@ with tab2:
                             if match:
                                 focus = match.group(1).strip()
                                 
+                        focus = smart_clean_focus(focus)
+                        
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
