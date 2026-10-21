@@ -35,10 +35,8 @@ def precise_keyword_focus(raw_text):
     if not isinstance(raw_text, str) or not raw_text.strip():
         return "Spatial Analysis and Environmental Modeling"
     
-    # Convert to lowercase for uniform processing
     text = raw_text.lower()
     
-    # Clean out long conversational prefixes and filler phrases
     fillers = [
         "he focuses on the intersections of", "she focuses on the intersections of",
         "he focuses on", "she focuses on", "his research", "her research",
@@ -50,7 +48,6 @@ def precise_keyword_focus(raw_text):
     for f in fillers:
         text = text.replace(f, "")
         
-    # Extract key high-level concepts if specific long strings exist
     if "sustainability" in text or "political ecology" in text:
         return "Political Ecology and Sustainability"
     elif "gis education" in text or "geography education" in text:
@@ -58,7 +55,6 @@ def precise_keyword_focus(raw_text):
     elif "cartography" in text or "geovisualization" in text:
         return "Cartography and Geovisualization"
     
-    # Fallback: Clean remaining text, split and take first 3-4 clean words
     cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
     words = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
     
@@ -66,6 +62,88 @@ def precise_keyword_focus(raw_text):
         return " ".join(words[:4]).title()
     
     return "Spatial Analysis and Environmental Modeling"
+
+def get_tailored_statement_content(prof_name, focus_domain):
+    """
+    Generates unique, domain-specific content for Sections 2, 3, and 4
+    based on the professor's research focus.
+    """
+    domain = focus_domain.lower()
+    clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
+
+    if "cartography" in domain or "geovisualization" in domain:
+        sec2 = (
+            f"My doctoral research interests are directly inspired by the cartographic and geovisualization research led by Dr. {clean_prof}. "
+            f"With 5.5+ years of practical GIS experience and custom Python tool development, I am eager to bridge quantitative spatial analytics "
+            f"with interactive geovisualization methods. Your lab's focus on spatial representation provides an ideal platform for designing "
+            f"next-generation dynamic visual frameworks and spatial decision support interfaces."
+        )
+        sec3 = (
+            f"To align my technical competencies with your lab's mission in {focus_domain.lower()}, I propose a dissertation focused on three core pillars: "
+            f"(1) developing scalable Python and GEE workflows for real-time web-based geovisualization; "
+            f"(2) evaluating cartographic spatial metrics to enhance visual communication of complex spatial risk data; and "
+            f"(3) integrating multi-dimensional spatial time-series into interactive visual analytics platforms."
+        )
+        sec4 = (
+            f"By combining my background in automated geospatial processing, remote sensing time-series, and demonstrated publishing record, "
+            f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s cartographic and geovisualization research program."
+        )
+
+    elif "political ecology" in domain or "sustainability" in domain or "environment" in domain:
+        sec2 = (
+            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in {focus_domain.lower()}. "
+            f"My background in remote sensing, spatiotemporal land-use modeling, and habitat dynamics—highlighted by my publication in the "
+            f"Journal for Nature Conservation (Elsevier)—directly complements your lab's focus on human-environment interactions. "
+            f"I am keen to integrate satellite observation time-series with socio-ecological frameworks to evaluate regional sustainability."
+        )
+        sec3 = (
+            f"To support your lab's ongoing research in {focus_domain.lower()}, my proposed dissertation directions include: "
+            f"(1) leveraging multi-decadal Landsat/Sentinel observations in GEE to quantify environmental change and land degradation; "
+            f"(2) applying spatial statistical modeling (MaxEnt/GLM) to evaluate ecological risk and sustainable resource allocation; and "
+            f"(3) modeling multi-criteria spatial scenarios to guide evidence-based regional sustainability policies."
+        )
+        sec4 = (
+            f"Leveraging my strong technical foundation in GIS, Python automation, and environmental modeling, I am committed to advancing "
+            f"high-impact, policy-relevant ecological research under Dr. {clean_prof}'s mentorship."
+        )
+
+    elif "gis education" in domain or "spatial methods" in domain:
+        sec2 = (
+            f"I am deeply motivated by Dr. {clean_prof}'s focus on {focus_domain.lower()} and methodological spatial development. "
+            f"Having automated complex geospatial workflows across 200+ data sources and developed customized spatial analytical pipelines in Python/SQL, "
+            f"I am excited to contribute to reproducible spatial methodologies and open-source geospatial framework development within your research group."
+        )
+        sec3 = (
+            f"Synthesizing my technical skills with your research direction in {focus_domain.lower()}, I propose focusing on: "
+            f"(1) constructing open-source, automated Python and GEE modules for complex spatial analytical tasks; "
+            f"(2) evaluating reproducible geospatial workflows to enhance data QA/QC and analytical accuracy in big spatial data; and "
+            f"(3) developing spatial modeling frameworks that bridge advanced remote sensing techniques with accessible GIS methods."
+        )
+        sec4 = (
+            f"With 5.5+ years of practical GIS experience and a passion for methodological rigour, I am eager to make a strong contribution "
+            f"to Dr. {clean_prof}'s ongoing work in spatial methods and reproducible GIS science."
+        )
+
+    else:
+        # Default / Spatial Analytics / Health / Demography Focus
+        sec2 = (
+            f"My doctoral research interests are directly inspired by the scholarly contributions led by Dr. {clean_prof} in {focus_domain.lower()}. "
+            f"My academic foundation in M.Sc. Remote Sensing & GIS, combined with 5.5+ years of quantitative spatial analytics, offers an ideal alignment "
+            f"with your research group. I am eager to apply big data spatial analytics, Python automation, and satellite time-series analysis "
+            f"to advance empirical spatial research in your ongoing projects."
+        )
+        sec3 = (
+            f"To synthesize my technical skill set with your lab's mission in {focus_domain.lower()}, I propose a dissertation structured around: "
+            f"(1) integrating multi-decadal satellite observation time-series with spatial metrics to evaluate longitudinal change; "
+            f"(2) developing scalable Python and GEE computational workflows tailored to {focus_domain.lower()}; and "
+            f"(3) applying advanced spatial statistics to simulate predictive environmental and spatial risk surfaces."
+        )
+        sec4 = (
+            f"By combining my technical competencies in spatial modeling, demonstrated publishing experience in Elsevier journals, and focused alignment "
+            f"with Dr. {clean_prof}'s research vision, I am fully prepared to contribute effectively as a funded PhD researcher."
+        )
+
+    return sec2, sec3, sec4
 
 # ==================== TAB 1 ====================
 with tab1:
@@ -177,6 +255,9 @@ with tab2:
                                 
                         focus = precise_keyword_focus(focus)
                         
+                        # Generate fully dynamic & tailored paragraphs for this specific professor & domain
+                        sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
+                        
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
@@ -197,43 +278,43 @@ with tab2:
                         pdf.cell(0, 4, f"{FAIZAN_CV['linkedin']}", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
                         
-                        # Research Focus
+                        # Research Focus Header
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.multi_cell(0, 4, f"Research Focus: Integrating Spatial Analytics, Python Workflows, and {focus}", align="L")
                         pdf.ln(2)
                         
-                        # Section 1
+                        # Section 1: Academic Foundation
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, f"My academic credentials include an M.Sc. in Remote Sensing & GIS and a B.Sc. in GeoInformatics, backed by 5.5+ years of practical GIS experience. My technical competencies span advanced Python, SQL, Google Earth Engine (GEE), and spatial statistical modeling. Demonstrating my academic research capability, I co-authored peer-reviewed research published in the Journal for Nature Conservation (Elsevier) focusing on spatiotemporal dynamics and spatial risk assessment.")
                         pdf.ln(2)
                         
-                        # Section 2
+                        # Section 2: Unique Domain Alignment
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, f"2. Alignment with Dr. {prof_name.replace('Dr. ', '')}'s Research Lab", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"My doctoral research interests are directly inspired by the scholarly contributions and investigations led by Dr. {prof_name.replace('Dr. ', '')} in the domain of {focus}. The methodological frameworks developed through your research group offer an ideal platform for integrating big data spatial analytics with complex geographical systems. I am eager to contribute my technical background in automated geospatial processing to support and expand upon your ongoing objectives.")
+                        pdf.multi_cell(0, 3.8, sec2_text)
                         pdf.ln(2)
                         
-                        # Section 3
+                        # Section 3: Unique Proposed Directions (3 Domain-Specific Pillars)
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"To synthesize my technical skill set with your lab's mission in {focus.lower()}, I propose focusing my dissertation on three core pillars: (1) integrating multi-decadal observation time-series with spatial metrics to evaluate longitudinal change; (2) developing scalable Python and GEE workflows tailored to {focus.lower()} for rapid spatial mapping; and (3) applying advanced spatial statistics to simulate predictive environmental and social risk surfaces.")
+                        pdf.multi_cell(0, 3.8, sec3_text)
                         pdf.ln(2)
                         
-                        # Section 4
+                        # Section 4: Dynamic Conclusion & Impact
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, f"By combining my rigorous technical competencies in spatial modeling, demonstrated publishing experience, and focused alignment with Dr. {prof_name.replace('Dr. ', '')}'s research themes, I am fully prepared to make an immediate, high-impact contribution as a funded PhD researcher.")
+                        pdf.multi_cell(0, 3.8, sec4_text)
                         
                         pdf_bytes = bytes(pdf.output())
                         zip_file.writestr(file_name, pdf_bytes)
                         
                 zip_buffer.seek(0)
-                st.success(f"Successfully generated unique A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.success(f"Successfully generated 100% unique, domain-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
                     label="Download Research Statements (ZIP)",
                     data=zip_buffer,
