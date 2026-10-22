@@ -6,7 +6,7 @@ from fpdf import FPDF
 import re
 
 st.set_page_config(page_title="Faizan's PhD Assistant", layout="wide")
-st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator (AI-Powered)")
+st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
 
 # Faizan Ahmad's Master Profile Source of Truth
 FAIZAN_CV = {
@@ -59,6 +59,8 @@ def precise_keyword_focus(raw_text):
         return "GIS Education and Spatial Methods"
     elif "cartography" in text or "geovisualization" in text:
         return "Cartography and Geovisualization"
+    elif "hydrology" in text or "water" in text or "wetland" in text or "flood" in text:
+        return "Satellite Hydrology and Water Resources"
     
     cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
     words = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
@@ -72,7 +74,24 @@ def get_tailored_statement_content(prof_name, focus_domain):
     domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
 
-    if "cartography" in domain or "geovisualization" in domain:
+    if "hydrology" in domain or "water" in domain or "wetland" in domain:
+        sec2 = (
+            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s pioneering research in satellite hydrology and surface water elevation dynamics. "
+            f"Having conducted my M.Sc. thesis on spatiotemporal flood risk and LULC modeling, combined with 5.5+ years of geospatial Python and GEE workflows, "
+            f"I am deeply motivated to apply spaceborne remote sensing to bridge data gaps in complex river basins and ungauged wetland systems."
+        )
+        sec3 = (
+            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
+            f"(1) fusing multi-sensor satellite altimetry with SAR/optical imagery in GEE to map dynamic surface water storage; "
+            f"(2) developing scalable Python workflows to derive continuous river slope and discharge estimates; and "
+            f"(3) applying spatial statistics to model hydro-ecological risk and flood inundation scenarios."
+        )
+        sec4 = (
+            f"By combining my solid foundation in satellite time-series analysis, Python geospatial automation, and demonstrated Elsevier publishing experience, "
+            f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s research program."
+        )
+
+    elif "cartography" in domain or "geovisualization" in domain:
         sec2 = (
             f"My doctoral research interests are directly inspired by the cartographic and geovisualization research led by Dr. {clean_prof}. "
             f"With 5.5+ years of practical GIS experience and custom Python tool development, I am eager to bridge quantitative spatial analytics "
@@ -108,23 +127,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"high-impact, policy-relevant ecological research under Dr. {clean_prof}'s mentorship."
         )
 
-    elif "gis education" in domain or "spatial methods" in domain:
-        sec2 = (
-            f"I am deeply motivated by Dr. {clean_prof}'s focus on {focus_domain.lower()} and methodological spatial development. "
-            f"Having automated complex geospatial workflows across 200+ data sources and developed customized spatial analytical pipelines in Python/SQL, "
-            f"I am excited to contribute to reproducible spatial methodologies and open-source geospatial framework development within your research group."
-        )
-        sec3 = (
-            f"Synthesizing my technical skills with your research direction in {focus_domain.lower()}, I propose focusing on: "
-            f"(1) constructing open-source, automated Python and GEE modules for complex spatial analytical tasks; "
-            f"(2) evaluating reproducible geospatial workflows to enhance data QA/QC and analytical accuracy in big spatial data; and "
-            f"(3) developing spatial modeling frameworks that bridge advanced remote sensing techniques with accessible GIS methods."
-        )
-        sec4 = (
-            f"With 5.5+ years of practical GIS experience and a passion for methodological rigour, I am eager to make a strong contribution "
-            f"to Dr. {clean_prof}'s ongoing work in spatial methods and reproducible GIS science."
-        )
-
     else:
         sec2 = (
             f"My doctoral research interests are directly inspired by the scholarly contributions led by Dr. {clean_prof} in {focus_domain.lower()}. "
@@ -136,7 +138,7 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"To synthesize my technical skill set with your lab's mission in {focus_domain.lower()}, I propose a dissertation structured around: "
             f"(1) integrating multi-decadal satellite observation time-series with spatial metrics to evaluate longitudinal change; "
             f"(2) developing scalable Python and GEE computational workflows tailored to {focus_domain.lower()}; and "
-            f"(3) applying advanced spatial statistics to simulate predictive environmental and social risk surfaces."
+            f"(3) applying advanced spatial statistics to simulate predictive environmental and spatial risk surfaces."
         )
         sec4 = (
             f"By combining my technical competencies in spatial modeling, demonstrated publishing experience in Elsevier journals, and focused alignment "
@@ -148,7 +150,7 @@ def get_tailored_statement_content(prof_name, focus_domain):
 # ==================== TAB 1 ====================
 with tab1:
     st.subheader("📝 Enter Professor Details & Generate Targeted Email Package")
-    st.write("Har professor ke liye unka Name, Email, aur Research Focus enter karein. App automatically AI-tailored email body aur subject generate karegi.")
+    st.write("Har professor ke liye details enter karein. System 2-paragraph highly tailored email body generate karega.")
     
     num_profs = st.number_input("Kitne professors ki details enter karni hain?", min_value=1, max_value=10, value=2, step=1)
     
@@ -160,13 +162,13 @@ with tab1:
         
         col1, col2 = st.columns(2)
         with col1:
-            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. George White")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., George.White@sdstate.edu")
+            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Doug Alsdorf")
+            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., alsdorf.1@osu.edu")
         with col2:
-            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Political ecology, sustainability, political geography")
-            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Recent work on natural resource use")
+            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Satellite Hydrology, Surface Water Elevation")
+            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., SWOT mission river discharge modeling")
             
-        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://www.sdstate.edu/directory/george-white")
+        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://earthsciences.osu.edu/people/alsdorf.1")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
@@ -189,13 +191,13 @@ with tab1:
                 focus_clean = precise_keyword_focus(prof['expertise'])
                 
                 subject = f"Prospective PhD Inquiry: {focus_clean} - Faizan Ahmad"
-                pub_context = f" Noting your work on {prof['pub_ref']}," if prof['pub_ref'] else f" Building upon my peer-reviewed research in the Journal for Nature Conservation (Elsevier) on spatiotemporal dynamics,"
+                pub_ref_text = f" and your work on {prof['pub_ref']}" if prof['pub_ref'] else ""
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
-                    f"I am writing to express my strong interest in pursuing a doctoral degree under your supervision, focusing on your research domain in {focus_clean}.{pub_context} Your lab's methodological contributions provide an inspiring framework for advancing empirical geographical and spatial research.\n\n"
-                    f"With an M.Sc. in Remote Sensing & GIS, 5.5+ years of practical expertise in Python, SQL, and Google Earth Engine (GEE), and a strong foundation in spatial statistical modeling, I am eager to apply quantitative spatial frameworks to your ongoing projects. Are you currently accepting PhD students with funded positions (RA, TA, or Fellowships) in your lab for upcoming terms? I have attached my CV and a 1-page Statement of Research Interests for your review.\n\n"
-                    f"Thank you for your time and consideration.\n\n"
+                    f"This is the defining moment where I am writing to express my profound research enthusiasm for joining your research group as a Ph.D. candidate, focusing on {focus_clean}. Having closely followed your scholarly contributions{pub_ref_text}, I am deeply motivated by your lab's vision of integrating spatial analytical frameworks with complex geographical systems.\n\n"
+                    f"With an M.Sc. in Remote Sensing & GIS, 5.5+ years of quantitative geospatial experience, an Elsevier publication in the Journal for Nature Conservation, and an M.Sc. thesis centered on flood risk modeling, I bring strong technical capabilities in Python automation, Google Earth Engine (GEE), and spatial statistical workflows. I am eager to apply quantitative spatial frameworks to your ongoing projects. Are you currently accepting Ph.D. students with funded research assistantships (RA/TA) for upcoming terms? I have attached my CV and a tailored 1-page Statement of Research Interests for your review.\n\n"
+                    f"Thank you for your leadership and consideration.\n\n"
                     f"Sincerely,\n"
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
@@ -227,7 +229,7 @@ with tab1:
 # ==================== TAB 2 ====================
 with tab2:
     st.subheader("📄 Bulk Generate Tailored Research Statement PDFs")
-    st.write("Apna processed Excel file (`Targeted_Faculty_Emails.xlsx`) yahan upload karein taake har professor ke liye unique aur domain-tailored A4 PDF research statements ZIP package mein download ho sakein.")
+    st.write("Upload your Excel file (`Targeted_Faculty_Emails.xlsx`) to generate unique A4 PDFs.")
     
     uploaded_file = st.file_uploader("Upload Faculty Excel File (.xlsx):", type=["xlsx"])
     
@@ -249,8 +251,8 @@ with tab2:
                         focus = "Spatial Analysis and Environmental Modeling"
                         if ":" in subject and "-" in subject:
                             focus = subject.split(":")[1].split("-")[0].strip()
-                        elif "domain in" in email_body:
-                            match = re.search(r"domain in (.*?)\.", email_body)
+                        elif "focusing on" in email_body:
+                            match = re.search(r"focusing on (.*?)\.", email_body)
                             if match:
                                 focus = match.group(1).strip()
                                 
