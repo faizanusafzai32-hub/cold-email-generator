@@ -5,7 +5,8 @@ import zipfile
 from fpdf import FPDF
 import re
 
-st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
+st.set_page_config(page_title="Faizan's PhD Assistant", layout="wide")
+st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator (AI-Powered)")
 
 # Faizan Ahmad's Master Profile Source of Truth
 FAIZAN_CV = {
@@ -135,7 +136,7 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"To synthesize my technical skill set with your lab's mission in {focus_domain.lower()}, I propose a dissertation structured around: "
             f"(1) integrating multi-decadal satellite observation time-series with spatial metrics to evaluate longitudinal change; "
             f"(2) developing scalable Python and GEE computational workflows tailored to {focus_domain.lower()}; and "
-            f"(3) applying advanced spatial statistics to simulate predictive environmental and spatial risk surfaces."
+            f"(3) applying advanced spatial statistics to simulate predictive environmental and social risk surfaces."
         )
         sec4 = (
             f"By combining my technical competencies in spatial modeling, demonstrated publishing experience in Elsevier journals, and focused alignment "
@@ -146,7 +147,8 @@ def get_tailored_statement_content(prof_name, focus_domain):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.write("Yahan aap 1 se 5 ya uss se zyada professors ki details sequential form mein enter karke targeted email package (Excel) generate kar sakte hain.")
+    st.subheader("📝 Enter Professor Details & Generate Targeted Email Package")
+    st.write("Har professor ke liye unka Name, Email, aur Research Focus enter karein. App automatically AI-tailored email body aur subject generate karegi.")
     
     num_profs = st.number_input("Kitne professors ki details enter karni hain?", min_value=1, max_value=10, value=2, step=1)
     
@@ -154,7 +156,7 @@ with tab1:
     
     for i in range(int(num_profs)):
         st.markdown(f"---")
-        st.subheader(f"👨‍🏫 Professor {i+1} Details")
+        st.markdown(f"#### 👨‍🏫 Professor Entry {i+1}")
         
         col1, col2 = st.columns(2)
         with col1:
@@ -216,7 +218,7 @@ with tab1:
             
             st.success(f"Successfully generated targeted email package for {len(excel_rows)} professor(s)!")
             st.download_button(
-                label="Download .xlsx File",
+                label="📥 Download Targeted_Faculty_Emails.xlsx",
                 data=buffer,
                 file_name="Targeted_Faculty_Emails.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -224,7 +226,8 @@ with tab1:
 
 # ==================== TAB 2 ====================
 with tab2:
-    st.write("Upload your processed Excel file (`Targeted_Faculty_Emails.xlsx`) to generate tailored Statement of Research Interest PDFs.")
+    st.subheader("📄 Bulk Generate Tailored Research Statement PDFs")
+    st.write("Apna processed Excel file (`Targeted_Faculty_Emails.xlsx`) yahan upload karein taake har professor ke liye unique aur domain-tailored A4 PDF research statements ZIP package mein download ho sakein.")
     
     uploaded_file = st.file_uploader("Upload Faculty Excel File (.xlsx):", type=["xlsx"])
     
@@ -312,7 +315,7 @@ with tab2:
                 zip_buffer.seek(0)
                 st.success(f"Successfully generated 100% unique, domain-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
                 st.download_button(
-                    label="Download Research Statements (ZIP)",
+                    label="📥 Download Research Statements (ZIP)",
                     data=zip_buffer,
                     file_name="Research_Statements_ZIP.zip",
                     mime="application/zip"
