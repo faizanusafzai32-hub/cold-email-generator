@@ -61,6 +61,8 @@ def precise_keyword_focus(raw_text):
         return "Cartography and Geovisualization"
     elif "hydrology" in text or "water" in text or "wetland" in text or "flood" in text:
         return "Satellite Hydrology and Water Resources"
+    elif "geodesy" in text or "gps" in text or "meteorology" in text or "climate" in text:
+        return "Geodesy, GPS Meteorology, and Climate Science"
     
     cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
     words = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
@@ -74,7 +76,24 @@ def get_tailored_statement_content(prof_name, focus_domain):
     domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
 
-    if "hydrology" in domain or "water" in domain or "wetland" in domain:
+    if "geodesy" in domain or "gps" in domain or "meteorology" in domain or "climate" in domain:
+        sec2 = (
+            f"My doctoral aspirations are strongly aligned with Dr. {clean_prof}'s pioneering research in geodesy, GPS meteorology, and climate-induced Earth system variations. "
+            f"With my robust background in high-precision spatial positioning, remote sensing time-series, and quantitative geospatial analytics, "
+            f"I am eager to apply advanced data processing techniques to measure crustal deformation, atmospheric water vapor, and climate signals using spaceborne geodetic networks."
+        )
+        sec3 = (
+            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
+            f"(1) processing high-frequency GPS and geodetic time-series data using scalable Python automation frameworks; "
+            f"(2) evaluating atmospheric precipitable water vapor and meteorological anomalies to refine climate tracking models; and "
+            f"(3) applying spatial-temporal statistical modeling to analyze geodetic deformation and environmental surface responses."
+        )
+        sec4 = (
+            f"By combining my strong quantitative background in spatial modeling, Python workflows, and demonstrated Elsevier publishing experience, "
+            f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s geodetic and climate research program."
+        )
+
+    elif "hydrology" in domain or "water" in domain or "wetland" in domain:
         sec2 = (
             f"My doctoral aspirations strongly align with Dr. {clean_prof}'s pioneering research in satellite hydrology and surface water elevation dynamics. "
             f"Having conducted my M.Sc. thesis on spatiotemporal flood risk and LULC modeling, combined with 5.5+ years of geospatial Python and GEE workflows, "
@@ -162,13 +181,13 @@ with tab1:
         
         col1, col2 = st.columns(2)
         with col1:
-            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Doug Alsdorf")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., alsdorf.1@osu.edu")
+            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Michael Bevis")
+            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., bevis.6@osu.edu")
         with col2:
-            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Satellite Hydrology, Surface Water Elevation")
-            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., SWOT mission river discharge modeling")
+            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Geodesy, GPS Meteorology, Climate")
+            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Spaceborne geodetic and climate modeling")
             
-        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://earthsciences.osu.edu/people/alsdorf.1")
+        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://earthsciences.osu.edu/people/bevis.6")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
