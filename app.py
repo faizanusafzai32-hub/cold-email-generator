@@ -37,11 +37,12 @@ def clean_pdf_text(text):
                    .replace('\u2013', '-'))
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
-def precise_keyword_focus(raw_text):
-    if not isinstance(raw_text, str) or not raw_text.strip():
+def precise_keyword_focus(raw_text, bio_text=""):
+    combined = (str(raw_text) + " " + str(bio_text)).strip()
+    if not combined:
         return "Spatial Analysis and Environmental Modeling"
     
-    text = raw_text.lower()
+    text = combined.lower()
     fillers = [
         "he focuses on the intersections of", "she focuses on the intersections of",
         "he focuses on", "she focuses on", "his research", "her research",
@@ -64,11 +65,20 @@ def precise_keyword_focus(raw_text):
     elif "geodesy" in text or "gps" in text or "meteorology" in text or "climate" in text:
         return "Geodesy, GPS Meteorology, and Climate Science"
     
+    # Auto-comma formatting utility if raw text was pasted without commas
+    words = [w.strip() for w in re.split(r'[,;\n]+', raw_text) if w.strip()]
+    if len(words) > 1:
+        if len(words) == 2:
+            return f"{words[0].title()} and {words[1].title()}"
+        return f"{', '.join([w.title() for w in words[:-1]])}, and {words[-1].title()}"
+        
     cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
-    words = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
+    tokens = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
     
-    if words:
-        return " ".join(words[:4]).title()
+    if tokens:
+        if len(tokens) >= 3:
+            return f"{tokens[0].title()}, {tokens[1].title()}, and {tokens[2].title()}"
+        return " ".join([t.title() for t in tokens[:4]])
     
     return "Spatial Analysis and Environmental Modeling"
 
@@ -181,13 +191,14 @@ with tab1:
         
         col1, col2 = st.columns(2)
         with col1:
-            p_name = st.text_input(f"Faculty Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Michael Bevis")
+            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Michael Bevis")
             p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., bevis.6@osu.edu")
         with col2:
             p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Geodesy, GPS Meteorology, Climate")
             p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Spaceborne geodetic and climate modeling")
             
         p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://earthsciences.osu.edu/people/bevis.6")
+        p_bio = st.text_area(f"Professor Bio / About Me Text {i+1} (Optional - Copy paste from website):", key=f"bio_{i}", placeholder="e.g., Paste biography, lab summary, or recent research overview here...")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
@@ -195,7 +206,8 @@ with tab1:
                 "email": p_email.strip(),
                 "expertise": p_expertise.strip() if p_expertise.strip() else "Spatial Analysis and Environmental Modeling",
                 "pub_ref": p_pub.strip(),
-                "link": p_link.strip()
+                "link": p_link.strip(),
+                "bio": p_bio.strip()
             })
 
     st.markdown("---")
@@ -207,7 +219,7 @@ with tab1:
             for prof in professors_data:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                focus_clean = precise_keyword_focus(prof['expertise'])
+                focus_clean = precise_keyword_focus(prof['expertise'], prof['bio'])
                 
                 subject = f"Prospective PhD Inquiry: {focus_clean} - Faizan Ahmad"
                 pub_ref_text = f" and your work on {prof['pub_ref']}" if prof['pub_ref'] else ""
@@ -292,7 +304,7 @@ with tab2:
                         
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, clean_pdf_text(FAIZAN_CV["name"]), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.set_font("Helvetica", size=9)
+                        pdf.set_font("Helvetica", style="B", size=9)
                         pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, clean_pdf_text(f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}"), new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, clean_pdf_text(f"{FAIZAN_CV['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
