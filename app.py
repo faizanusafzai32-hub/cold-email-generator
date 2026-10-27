@@ -14,10 +14,10 @@ FAIZAN_CV = {
     "phone": "+92 312 9380985",
     "email": "faizan.usafzai32@gmail.com",
     "linkedin": "www.linkedin.com/in/faizan-ahmad-98990b183",
-    "degree": "M.Sc. Remote Sensing & GIS (IST, Islamabad) & B.Sc. Geo-Informatics",
-    "exp": "over 5.5 years of quantitative geospatial experience in spatial analytics and Earth Observation",
+    "degree": "M.Sc. in Remote Sensing & GIS",
+    "exp": "Sr. GIS Analyst at Zoneomics (US-based spatial intelligence company) with over 2 years of direct experience in processing US-scale big spatial databases, alongside 5.5+ years of overall geospatial research and industry experience",
     "skills": "Python, SQL, and Google Earth Engine (GEE)",
-    "pub": "peer-reviewed publication in the Journal for Nature Conservation (Elsevier)",
+    "pub": "peer-reviewed publication in Elsevier's Journal for Nature Conservation",
     "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
 }
 
@@ -87,12 +87,6 @@ def precise_keyword_focus(raw_text, bio_text=""):
     return "Remote Sensing & Spatial Analytics"
 
 def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
-    """
-    Intelligently builds Paragraph 1 based on what fields are provided:
-    - Only Expertise/Bio -> Focuses on research areas and lab scope.
-    - Only Publication -> Focuses on the specific paper.
-    - Both Expertise & Publication -> Seamlessly integrates both into the narrative.
-    """
     clean_expertise = precise_keyword_focus(expertise, bio)
     
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
@@ -273,16 +267,15 @@ with tab1:
                 
                 subject = f"Prospective Ph.D. Applicant — {focus_clean} - Faizan Ahmad"
                 
-                # Dynamic Paragraph 1 building based on inputs (Expertise and/or Publication)
                 para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
                 
-                # Final Email Body matching your exact required structure
+                # Updated Email Body with the requested line removed from Paragraph 2
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
                     f"{para1}\n\n"
-                    f"I hold an M.Sc. in Remote Sensing & GIS backed by over 5.5 years of quantitative geospatial experience. My technical toolkit centers on Python, SQL, and Google Earth Engine (GEE) for automated satellite image processing and spatial modeling, alongside my own peer-reviewed publication in the Journal for Nature Conservation (Elsevier).\n\n"
-                    f"Given the strong overlap between your work on coastal Earth Observation and my background in satellite data analytics, I am eager to contribute to your ongoing research projects.\n\n"
+                    f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics), bringing over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience-complemented by a peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
+                    f"Given the strong overlap between your work and my background in spatial analytics, I am eager to contribute to your ongoing research projects.\n\n"
                     f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
                     f"I have attached my CV for your review and would welcome the opportunity to connect. Thank you very much for your time and leadership.\n\n\n"
                     f"Best Regards,\n"
@@ -344,70 +337,4 @@ with tab2:
                                 focus = parts[0].replace("Prospective Ph.D. Applicant", "").replace(":", "").strip()
                                 
                         focus = clean_pdf_text(precise_keyword_focus(focus))
-                        sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
-                        
-                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
-                        file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
-                        
-                        pdf = FPDF(orientation='P', unit='mm', format='A4')
-                        pdf.set_margins(left=15, top=15, right=15)
-                        pdf.add_page()
-                        pdf.set_auto_page_break(auto=True, margin=15)
-                        
-                        # Header
-                        pdf.set_font("Helvetica", style="B", size=13)
-                        pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
-                        
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, clean_pdf_text(FAIZAN_CV["name"]), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.set_font("Helvetica", style="B", size=9)
-                        pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, clean_pdf_text(f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}"), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, clean_pdf_text(f"{FAIZAN_CV['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.ln(3)
-                        
-                        # Research Focus Header
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.multi_cell(0, 4, clean_pdf_text(f"Research Focus: Integrating Spatial Analytics, Python Workflows, and {focus}"), align="L")
-                        pdf.ln(2)
-                        
-                        # Section 1: Academic Foundation
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, clean_pdf_text("My academic credentials include an M.Sc. in Remote Sensing & GIS and a B.Sc. in GeoInformatics, backed by 5.5+ years of practical GIS experience. My technical competencies span advanced Python, SQL, Google Earth Engine (GEE), and spatial statistical modeling. Demonstrating my academic research capability, I co-authored peer-reviewed research published in the Journal for Nature Conservation (Elsevier) focusing on spatiotemporal dynamics and spatial risk assessment."))
-                        pdf.ln(2)
-                        
-                        # Section 2: Unique Domain Alignment
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec2_text)
-                        pdf.ln(2)
-                        
-                        # Section 3: Unique Proposed Directions
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec3_text)
-                        pdf.ln(2)
-                        
-                        # Section 4: Dynamic Conclusion
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec4_text)
-                        
-                        pdf_bytes = bytes(pdf.output())
-                        zip_file.writestr(file_name, pdf_bytes)
-                        
-                zip_buffer.seek(0)
-                st.success(f"Successfully generated 100% unique, domain-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
-                st.download_button(
-                    label="📥 Download Research Statements (ZIP)",
-                    data=zip_buffer,
-                    file_name="Research_Statements_ZIP.zip",
-                    mime="application/zip"
-                )
-        except Exception as e:
-            st.error(f"Error reading Excel file: {e}")
+                        sec2_text, sec3_text, sec4_text = get_tailored_statement
