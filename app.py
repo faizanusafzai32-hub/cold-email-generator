@@ -269,7 +269,7 @@ with tab1:
                 
                 para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
                 
-                # Updated Email Body with the requested line removed from Paragraph 2
+                # Updated Email Body with "Sr. GIS Analyst" signature
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
@@ -280,7 +280,7 @@ with tab1:
                     f"I have attached my CV for your review and would welcome the opportunity to connect. Thank you very much for your time and leadership.\n\n\n"
                     f"Best Regards,\n"
                     f"Faizan Ahmad\n"
-                    f"GIS Specialist\n"
+                    f"Sr. GIS Analyst\n"
                     f"WhatsApp/Mob: {FAIZAN_CV['phone']}\n"
                     f"{FAIZAN_CV['linkedin']}"
                 )
@@ -354,7 +354,7 @@ with tab2:
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, clean_pdf_text(FAIZAN_CV["name"]), new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.set_font("Helvetica", style="B", size=9)
-                        pdf.cell(0, 4, "GIS Specialist", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, "Sr. GIS Analyst", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, clean_pdf_text(f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}"), new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.cell(0, 4, clean_pdf_text(f"{FAIZAN_CV['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.ln(3)
