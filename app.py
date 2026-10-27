@@ -15,7 +15,7 @@ FAIZAN_CV = {
     "email": "faizan.usafzai32@gmail.com",
     "linkedin": "www.linkedin.com/in/faizan-ahmad-98990b183",
     "degree": "M.Sc. Remote Sensing & GIS (IST, Islamabad) & B.Sc. Geo-Informatics",
-    "exp": "over 5.5 years of professional experience in spatial analytics and Earth Observation",
+    "exp": "over 5.5 years of quantitative geospatial experience in spatial analytics and Earth Observation",
     "skills": "Python, SQL, and Google Earth Engine (GEE)",
     "pub": "peer-reviewed publication in the Journal for Nature Conservation (Elsevier)",
     "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
@@ -66,42 +66,81 @@ def precise_keyword_focus(raw_text, bio_text=""):
         return "Geodesy & GPS Meteorology"
     elif "geoai" in text or "machine learning" in text or "deep learning" in text:
         return "Remote Sensing & GeoAI"
+    elif "coastal" in text or "oceanography" in text or "biogeophysical" in text:
+        return "Coastal Oceanography & Biogeophysical Processes"
     
     # Auto-comma/ampersand formatting utility
     words = [w.strip() for w in re.split(r'[,;\n]+', raw_text) if w.strip()]
     if len(words) > 1:
         if len(words) == 2:
-            return f"{words[0].title()} & {words[1].title()}"
-        return f"{', '.join([w.title() for w in words[:-1]])} & {words[-1].title()}"
+            return f"{words[0].title()} and {words[1].title()}"
+        return f"{', '.join([w.title() for w in words[:-1]])} and {words[-1].title()}"
         
     cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
     tokens = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
     
     if tokens:
         if len(tokens) >= 3:
-            return f"{tokens[0].title()}, {tokens[1].title()} & {tokens[2].title()}"
+            return f"{tokens[0].title()}, {tokens[1].title()} and {tokens[2].title()}"
         return " ".join([t.title() for t in tokens[:4]])
     
     return "Remote Sensing & Spatial Analytics"
 
-def extract_paper_topic_reference(pub_ref, expertise, bio=""):
-    if pub_ref and len(pub_ref.strip()) > 3:
-        return pub_ref.strip()
+def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
+    """
+    Intelligently builds Paragraph 1 based on what fields are provided:
+    - Only Expertise/Bio -> Focuses on research areas and lab scope.
+    - Only Publication -> Focuses on the specific paper.
+    - Both Expertise & Publication -> Seamlessly integrates both into the narrative.
+    """
+    clean_expertise = precise_keyword_focus(expertise, bio)
     
-    if bio and len(bio.strip()) > 10:
-        cleaned_bio = re.sub(r'http\S+', '', bio).strip()
-        sentences = [s.strip() for s in re.split(r'[\.\n]', cleaned_bio) if len(s.strip()) > 15]
-        if sentences:
-            return sentences[0][:80].rstrip(',')
-            
-    focus = precise_keyword_focus(expertise)
-    return f"advancements in {focus.lower()}"
+    has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
+    has_exp = bool(expertise and len(expertise.strip()) > 2)
+    
+    if has_exp and has_pub:
+        return (
+            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
+            f"Having followed your research area in {clean_expertise.lower()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
+            f"I am deeply impressed by how your lab leverages advanced spatial analytics and Earth Observation."
+        )
+    elif has_pub:
+        return (
+            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
+            f"Having read your publication, \"{pub_ref.strip()}\", I am deeply impressed by how your lab leverages quantitative spatial analytics with Earth Observation."
+        )
+    elif has_exp:
+        return (
+            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
+            f"Having followed your research focus in {clean_expertise.lower()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+        )
+    else:
+        return (
+            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
+            f"Having followed your academic contributions, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+        )
 
 def get_tailored_statement_content(prof_name, focus_domain):
     domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
 
-    if "geodesy" in domain or "gps" in domain or "meteorology" in domain or "climate" in domain:
+    if "coastal" in domain or "oceanography" in domain or "biogeophysical" in domain:
+        sec2 = (
+            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in coastal oceanography, wetlands, and biogeophysical processes. "
+            f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
+            f"I am deeply motivated to apply satellite time-series and machine learning for coastal habitat reconstruction and environmental monitoring."
+        )
+        sec3 = (
+            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
+            f"(1) fusing multi-sensor satellite imagery (Landsat, Sentinel) in GEE to map coastal habitat and vegetation distributions; "
+            f"(2) developing scalable machine learning workflows (random forests, spatial regression) to reconstruct longitudinal environmental maps; and "
+            f"(3) evaluating biogeophysical dynamics under changing climate conditions."
+        )
+        sec4 = (
+            f"By combining my solid foundation in satellite data analytics, Python workflow automation, and demonstrated Elsevier publishing experience, "
+            f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s research program."
+        )
+    elif "geodesy" in domain or "gps" in domain or "meteorology" in domain or "climate" in domain:
         sec2 = (
             f"My doctoral aspirations are strongly aligned with Dr. {clean_prof}'s pioneering research in geodesy, GPS meteorology, and climate-induced Earth system variations. "
             f"With my robust background in high-precision spatial positioning, remote sensing time-series, and quantitative geospatial analytics, "
@@ -117,7 +156,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"By combining my strong quantitative background in spatial modeling, Python workflows, and demonstrated Elsevier publishing experience, "
             f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s geodetic and climate research program."
         )
-
     elif "hydrology" in domain or "water" in domain or "wetland" in domain:
         sec2 = (
             f"My doctoral aspirations strongly align with Dr. {clean_prof}'s pioneering research in satellite hydrology and surface water elevation dynamics. "
@@ -134,7 +172,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"By combining my solid foundation in satellite time-series analysis, Python geospatial automation, and demonstrated Elsevier publishing experience, "
             f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s research program."
         )
-
     elif "cartography" in domain or "geovisualization" in domain:
         sec2 = (
             f"My doctoral research interests are directly inspired by the cartographic and geovisualization research led by Dr. {clean_prof}. "
@@ -152,7 +189,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"By combining my background in automated geospatial processing, remote sensing time-series, and demonstrated publishing record, "
             f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s cartographic and geovisualization research program."
         )
-
     elif "political ecology" in domain or "sustainability" in domain or "environment" in domain:
         sec2 = (
             f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in {focus_domain.lower()}. "
@@ -170,7 +206,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"Leveraging my strong technical foundation in GIS, Python automation, and environmental modeling, I am committed to advancing "
             f"high-impact, policy-relevant ecological research under Dr. {clean_prof}'s mentorship."
         )
-
     else:
         sec2 = (
             f"My doctoral research interests are directly inspired by the scholarly contributions led by Dr. {clean_prof} in {focus_domain.lower()}. "
@@ -206,20 +241,20 @@ with tab1:
         
         col1, col2 = st.columns(2)
         with col1:
-            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Michael Bevis")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., bevis.6@osu.edu")
+            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Philippe Archambault")
+            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., philippe.archambault@uqar.ca")
         with col2:
-            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Geodesy, GPS Meteorology, Climate")
-            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., spaceborne geodetic tracking")
+            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., coastal oceanography, wetlands, biogeophysical processes")
+            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Use of Landsat imagery time-series...")
             
-        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://earthsciences.osu.edu/people/bevis.6")
-        p_bio = st.text_area(f"Professor Bio / About Me Text {i+1} (Optional - Copy paste from website):", key=f"bio_{i}", placeholder="e.g., Paste biography, lab summary, or paper title here...")
+        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://...lab-profile")
+        p_bio = st.text_area(f"Professor Bio / About Me Text {i+1} (Optional - Copy paste from website):", key=f"bio_{i}", placeholder="e.g., Paste biography or lab summary here...")
         
         if p_name.strip() and p_email.strip():
             professors_data.append({
                 "name": p_name.strip(),
                 "email": p_email.strip(),
-                "expertise": p_expertise.strip() if p_expertise.strip() else "Remote Sensing & Spatial Analytics",
+                "expertise": p_expertise.strip(),
                 "pub_ref": p_pub.strip(),
                 "link": p_link.strip(),
                 "bio": p_bio.strip()
@@ -235,19 +270,21 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 focus_clean = precise_keyword_focus(prof['expertise'], prof['bio'])
-                paper_ref = extract_paper_topic_reference(prof['pub_ref'], prof['expertise'], prof['bio'])
                 
                 subject = f"Prospective Ph.D. Applicant — {focus_clean} - Faizan Ahmad"
                 
-                # Updated Email Body Structure with Clean Quotes for Paper Title & Proper Spacing
+                # Dynamic Paragraph 1 building based on inputs (Expertise and/or Publication)
+                para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
+                
+                # Final Email Body matching your exact required structure
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
-                    f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. Having read your recent work on \"{paper_ref}\", I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation.\n\n"
-                    f"I hold an M.Sc. in Remote Sensing & GIS and bring over 5.5 years of professional experience in spatial analytics and Earth Observation. My core technical expertise includes Python, SQL, and Google Earth Engine (GEE), alongside a peer-reviewed publication in the Journal for Nature Conservation (Elsevier).\n\n"
-                    f"Given my strong background, I am eager to apply my skills to your lab's ongoing projects.\n\n"
+                    f"{para1}\n\n"
+                    f"I hold an M.Sc. in Remote Sensing & GIS backed by over 5.5 years of quantitative geospatial experience. My technical toolkit centers on Python, SQL, and Google Earth Engine (GEE) for automated satellite image processing and spatial modeling, alongside my own peer-reviewed publication in the Journal for Nature Conservation (Elsevier).\n\n"
+                    f"Given the strong overlap between your work on coastal Earth Observation and my background in satellite data analytics, I am eager to contribute to your ongoing research projects.\n\n"
                     f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
-                    f"I have attached my CV for your review. Thank you very much for your time and consideration, and I look forward to hearing from you.\n\n\n"
+                    f"I have attached my CV for your review and would welcome the opportunity to connect. Thank you very much for your time and leadership.\n\n\n"
                     f"Best Regards,\n"
                     f"Faizan Ahmad\n"
                     f"GIS Specialist\n"
