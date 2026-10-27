@@ -239,11 +239,11 @@ with tab1:
                 
                 subject = f"Prospective Ph.D. Applicant — {focus_clean} - Faizan Ahmad"
                 
-                # Updated Email Body Structure with Quotes/Italics for Paper & Proper Spacing
+                # Updated Email Body Structure with Clean Quotes for Paper Title & Proper Spacing
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
-                    f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. Having read your recent work on *'{paper_ref}'*, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation.\n\n"
+                    f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. Having read your recent work on \"{paper_ref}\", I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation.\n\n"
                     f"I hold an M.Sc. in Remote Sensing & GIS and bring over 5.5 years of professional experience in spatial analytics and Earth Observation. My core technical expertise includes Python, SQL, and Google Earth Engine (GEE), alongside a peer-reviewed publication in the Journal for Nature Conservation (Elsevier).\n\n"
                     f"Given my strong background, I am eager to apply my skills to your lab's ongoing projects.\n\n"
                     f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
