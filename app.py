@@ -38,9 +38,6 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
-    """
-    Constructs Paragraph 1 using 'Ongoing Project' wording instead of Latest Published Papers.
-    """
     exp_text = expertise.strip() if expertise and len(expertise.strip()) > 2 else "spatio-temporal models and spatial analysis"
     pub_text = pub_ref.strip() if pub_ref and len(pub_ref.strip()) > 3 else ""
     
@@ -155,7 +152,7 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses only the exact research area/expertise (no papers or projects in subject)
+                # Subject strictly uses ONLY the research area/expertise, perfectly clean without any paper/project
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
