@@ -21,7 +21,7 @@ FAIZAN_CV = {
     "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
 }
 
-tab1, tab2 = st.tabs(["📧 1. Multi-Professor Structured Form & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
+tab1, tab2 = st.tabs(["⚡ 1. Fast One-Click Raw Text Parser & Excel Generator", "📄 2. Generate Research Statement PDFs (ZIP)"])
 
 def clean_pdf_text(text):
     if not isinstance(text, str):
@@ -114,6 +114,48 @@ def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
             f"Having followed your academic contributions, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
 
+def parse_raw_professor_block(raw_text):
+    """
+    Parses unstructured or structured pasted text containing:
+    Name:, Email Address:, Research Interests areas or expertise:, Latest Published Paper:, Bio:
+    """
+    professors = []
+    # Split blocks by double linebreaks or Name: patterns
+    blocks = re.split(r'\n\s*\n|(?=Name\s*:)', raw_text)
+    
+    for block in blocks:
+        if not block.strip():
+            continue
+            
+        name_match = re.search(r'(?:Name|Faculty Name|Professor Name)\s*:\s*(.*)', block, re.IGNORECASE)
+        email_match = re.search(r'(?:Email Address|Email)\s*:\s*(.*)', block, re.IGNORECASE)
+        exp_match = re.search(r'(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*(.*)', block, re.IGNORECASE)
+        pub_match = re.search(r'(?:Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*(.*)', block, re.IGNORECASE)
+        bio_match = re.search(r'(?:Bio|About Me|Biography)\s*:\s*(.*)', block, re.IGNORECASE)
+        
+        name = name_match.group(1).strip() if name_match else ""
+        email = email_match.group(1).strip() if email_match else ""
+        exp = exp_match.group(1).strip() if exp_match else ""
+        pub = pub_match.group(1).strip() if pub_match else ""
+        bio = bio_match.group(1).strip() if bio_match else ""
+        
+        # Fallback regex search for emails if prefix was missed
+        if not email:
+            fallback_email = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
+            if fallback_email:
+                email = fallback_email.group(0)
+                
+        if name or email:
+            professors.append({
+                "name": name if name else "Professor",
+                "email": email,
+                "expertise": exp,
+                "pub_ref": pub,
+                "bio": bio
+            })
+            
+    return professors
+
 def get_tailored_statement_content(prof_name, focus_domain):
     domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
@@ -166,40 +208,6 @@ def get_tailored_statement_content(prof_name, focus_domain):
             f"By combining my solid foundation in satellite time-series analysis, Python geospatial automation, and demonstrated Elsevier publishing experience, "
             f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s research program."
         )
-    elif "cartography" in domain or "geovisualization" in domain:
-        sec2 = (
-            f"My doctoral research interests are directly inspired by the cartographic and geovisualization research led by Dr. {clean_prof}. "
-            f"With 5.5+ years of practical GIS experience and custom Python tool development, I am eager to bridge quantitative spatial analytics "
-            f"with interactive geovisualization methods. Your lab's focus on spatial representation provides an ideal platform for designing "
-            f"next-generation dynamic visual frameworks and spatial decision support interfaces."
-        )
-        sec3 = (
-            f"To align my technical competencies with your lab's mission in {focus_domain.lower()}, I propose a dissertation focused on three core pillars: "
-            f"(1) developing scalable Python and GEE workflows for real-time web-based geovisualization; "
-            f"(2) evaluating cartographic spatial metrics to enhance visual communication of complex spatial risk data; and "
-            f"(3) integrating multi-dimensional spatial time-series into interactive visual analytics platforms."
-        )
-        sec4 = (
-            f"By combining my background in automated geospatial processing, remote sensing time-series, and demonstrated publishing record, "
-            f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s cartographic and geovisualization research program."
-        )
-    elif "political ecology" in domain or "sustainability" in domain or "environment" in domain:
-        sec2 = (
-            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in {focus_domain.lower()}. "
-            f"My background in remote sensing, spatiotemporal land-use modeling, and habitat dynamics-highlighted by my publication in the "
-            f"Journal for Nature Conservation (Elsevier)-directly complements your lab's focus on human-environment interactions. "
-            f"I am keen to integrate satellite observation time-series with socio-ecological frameworks to evaluate regional sustainability."
-        )
-        sec3 = (
-            f"To support your lab's ongoing research in {focus_domain.lower()}, my proposed dissertation directions include: "
-            f"(1) leveraging multi-decadal Landsat/Sentinel observations in GEE to quantify environmental change and land degradation; "
-            f"(2) applying spatial statistical modeling (MaxEnt/GLM) to evaluate ecological risk and sustainable resource allocation; and "
-            f"(3) modeling multi-criteria spatial scenarios to guide evidence-based regional sustainability policies."
-        )
-        sec4 = (
-            f"Leveraging my strong technical foundation in GIS, Python automation, and environmental modeling, I am committed to advancing "
-            f"high-impact, policy-relevant ecological research under Dr. {clean_prof}'s mentorship."
-        )
     else:
         sec2 = (
             f"My doctoral research interests are directly inspired by the scholarly contributions led by Dr. {clean_prof} in {focus_domain.lower()}. "
@@ -222,54 +230,34 @@ def get_tailored_statement_content(prof_name, focus_domain):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.subheader("📝 Enter Professor Details & Generate Targeted Email Package")
-    st.write("Enter professor details below. System generates customized email subjects & bodies aligned with your profile.")
-    
-    num_profs = st.number_input("Kitne professors ki details enter karni hain?", min_value=1, max_value=10, value=2, step=1)
-    
-    professors_data = []
-    
-    for i in range(int(num_profs)):
-        st.markdown(f"---")
-        st.markdown(f"#### 👨‍🏫 Professor Entry {i+1}")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Dr. Philippe Archambault")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., philippe.archambault@uqar.ca")
-        with col2:
-            p_expertise = st.text_input(f"Research Area / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., coastal oceanography, wetlands, biogeophysical processes")
-            p_pub = st.text_input(f"Key Publication / Project Reference {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Use of Landsat imagery time-series...")
-            
-        p_link = st.text_input(f"Profile Link {i+1} (For verification):", key=f"link_{i}", placeholder="e.g., https://...lab-profile")
-        p_bio = st.text_area(f"Professor Bio / About Me Text {i+1} (Optional - Copy paste from website):", key=f"bio_{i}", placeholder="e.g., Paste biography or lab summary here...")
-        
-        if p_name.strip() and p_email.strip():
-            professors_data.append({
-                "name": p_name.strip(),
-                "email": p_email.strip(),
-                "expertise": p_expertise.strip(),
-                "pub_ref": p_pub.strip(),
-                "link": p_link.strip(),
-                "bio": p_bio.strip()
-            })
+    st.subheader("⚡ One-Click Bulk Data Parser")
+    st.write("Aap niche diye gaye format ke mutabiq 1 ya kitne bhi professors ka text paste karein. System 1-click par auto-extract kar lega:")
 
-    st.markdown("---")
-    if st.button("📥 Generate & Download Excel File (4 Columns)"):
-        if not professors_data:
-            st.error("Kam az kam aik professor ki valid details (Name & Email) enter karna lazmi hai.")
+    example_format = """Name: Dr. Philippe Archambault
+Email Address: philippe.archambault@uqar.ca
+Research Interests areas or expertise: coastal oceanography, wetlands, biogeophysical processes
+Latest Published Paper: Use of Landsat imagery time-series and random forests classifier to reconstruct eelgrass bed distribution maps in Eeyou Istchee
+Bio: Focuses on marine ecology and remote sensing observation of coastal environments."""
+
+    pasted_data = st.text_area("📋 Paste Professor Raw Text Block Here:", height=220, value=example_format)
+
+    if st.button("🚀 Process & Generate Excel Package"):
+        parsed_profs = parse_raw_professor_block(pasted_data)
+        
+        if not parsed_profs:
+            st.error("Data parse nahi ho saka. Baraye meherbani 'Name:' aur 'Email Address:' headers verify karein.")
         else:
+            st.success(f"Successfully extracted data for {len(parsed_profs)} professor(s)!")
+            
             excel_rows = []
-            for prof in professors_data:
+            for prof in parsed_profs:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 focus_clean = precise_keyword_focus(prof['expertise'], prof['bio'])
                 
                 subject = f"Prospective Ph.D. Applicant — {focus_clean} - Faizan Ahmad"
-                
                 para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
                 
-                # Updated Email Body with "Sr. GIS Analyst" signature
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
@@ -293,12 +281,13 @@ with tab1:
                 })
 
             df = pd.DataFrame(excel_rows)
+            st.dataframe(df[["Name", "Email Address", "Email Subject"]])
+            
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df.to_excel(writer, index=False, sheet_name="Targeted Emails")
             buffer.seek(0)
             
-            st.success(f"Successfully generated targeted email package for {len(excel_rows)} professor(s)!")
             st.download_button(
                 label="📥 Download Targeted_Faculty_Emails.xlsx",
                 data=buffer,
