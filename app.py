@@ -38,14 +38,18 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
+    """
+    Intelligently maps Professor's Research Interests & Latest Published Paper 
+    directly into the 1st paragraph of the email body with proper quotes.
+    """
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     
     if has_exp and has_pub:
         return (
             f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your research focus in {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
-            f"I am deeply impressed by how your lab integrates advanced spatial analytics with Earth Observation."
+            f"Having followed your work on {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
+            f"I am deeply impressed by how your lab integrates advanced spatial analytics and Earth Observation."
         )
     elif has_pub:
         return (
@@ -55,7 +59,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     elif has_exp:
         return (
             f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your work in {expertise.strip()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"Having followed your research focus in {expertise.strip()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
     else:
         return (
@@ -64,15 +68,10 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
 
 def parse_raw_professor_blocks(raw_text):
-    """
-    Robustly parses multiple professor blocks separated by empty lines or 'Name:' headers.
-    """
     professors = []
-    # Split by blocks where each block starts with Name/Professor Name
     raw_blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
     
     if len(raw_blocks) <= 1:
-        # Fallback split by double newlines if specific header not matched
         raw_blocks = raw_text.strip().split('\n\n')
 
     for block in raw_blocks:
@@ -91,13 +90,11 @@ def parse_raw_professor_blocks(raw_text):
         pub = pub_match.group(1).strip() if pub_match else ""
         bio = bio_match.group(1).strip() if bio_match else ""
         
-        # If email tag was missing, grab via regex
         if not email:
             em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
             if em_search:
                 email = em_search.group(0)
                 
-        # If name tag was missing, grab the first line if it looks like a name
         if not name:
             lines = [l.strip() for l in block.split('\n') if l.strip()]
             if lines and not "@" in lines[0] and ":" not in lines[0]:
@@ -170,6 +167,7 @@ Latest Published Paper 1: Preliminary Study on Humpback Wales Lunge Feeding in t
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
+                # Dynamically constructs paragraph 1 including both Research Interests & Published Paper
                 para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
