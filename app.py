@@ -87,7 +87,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -152,11 +152,13 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses ONLY the research area/expertise, perfectly clean without any paper/project
-                exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
-                subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
+                # Subject strictly uses ONLY the research area/expertise, completely stripping out any papers/projects
+                raw_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
+                # Extra safety filter to remove any accidental paper text if present in raw input
+                clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
                 
-                # Dynamically constructs paragraph 1 using 'Ongoing Project' wording
+                subject = f"Prospective Ph.D. Applicant — {clean_focus} - Faizan Ahmad"
+                
                 project_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
@@ -209,6 +211,22 @@ with tab2:
     if uploaded_file is not None:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
+            
+            # Robust cleaning for uploaded excel files to strip any papers/projects from subject
+            cleaned_subjects = []
+            for sub in df_uploaded.get("Email Subject", []):
+                sub_str = str(sub)
+                if "—" in sub_str:
+                    parts = sub_str.split("—")
+                    prefix = parts[0].strip()
+                    core = parts[1].strip()
+                    # Strip everything starting with Latest Published or Ongoing Project
+                    core_clean = re.split(r'Latest Published|Ongoing Project|Paper:', core, flags=re.IGNORECASE)[0].strip()
+                    cleaned_subjects.append(f"{prefix} — {core_clean}")
+                else:
+                    cleaned_subjects.append(sub_str)
+            df_uploaded["Email Subject"] = cleaned_subjects
+            
             st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
             st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
             
