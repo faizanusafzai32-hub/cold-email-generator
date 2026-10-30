@@ -48,8 +48,8 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     if has_exp and has_pub:
         return (
             f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your work on {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
-            f"I am deeply impressed by how your lab integrates advanced spatial analytics and Earth Observation."
+            f"Having followed your research area in {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
+            f"I am deeply impressed by how your lab integrates advanced spatial analytics with Earth Observation."
         )
     elif has_pub:
         return (
@@ -68,6 +68,9 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
 
 def parse_raw_professor_blocks(raw_text):
+    """
+    Robust multi-line parser that correctly handles multi-line paper titles and research interests.
+    """
     professors = []
     raw_blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
     
@@ -78,36 +81,50 @@ def parse_raw_professor_blocks(raw_text):
         if not block.strip():
             continue
             
-        name_match = re.search(r'(?:Name|Faculty Name|Professor Name)\s*:\s*(.*)', block, re.IGNORECASE)
-        email_match = re.search(r'(?:Email Address|Email)\s*:\s*(.*)', block, re.IGNORECASE)
-        exp_match = re.search(r'(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*(.*)', block, re.IGNORECASE)
-        pub_match = re.search(r'(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*(.*)', block, re.IGNORECASE)
-        bio_match = re.search(r'(?:Bio|About Me|Biography|Notes)\s*:\s*(.*)', block, re.IGNORECASE)
+        prof = {"name": "", "email": "", "expertise": "", "pub_ref": "", "bio": ""}
+        lines = block.split('\n')
+        current_key = None
         
-        name = name_match.group(1).strip() if name_match else ""
-        email = email_match.group(1).strip() if email_match else ""
-        exp = exp_match.group(1).strip() if exp_match else ""
-        pub = pub_match.group(1).strip() if pub_match else ""
-        bio = bio_match.group(1).strip() if bio_match else ""
-        
-        if not email:
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
+                continue
+                
+            if re.match(r'^(?:Name|Faculty Name|Professor Name)\s*:', line_str, re.IGNORECASE):
+                current_key = 'name'
+                prof['name'] = re.sub(r'^(?:Name|Faculty Name|Professor Name)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            elif re.match(r'^(?:Email Address|Email)\s*:', line_str, re.IGNORECASE):
+                current_key = 'email'
+                prof['email'] = re.sub(r'^(?:Email Address|Email)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
+                current_key = 'expertise'
+                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:', line_str, re.IGNORECASE):
+                current_key = 'pub_ref'
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
+                current_key = 'bio'
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            else:
+                # Continuation of multi-line field (like long paper titles or research areas)
+                if current_key and current_key in prof:
+                    if prof[current_key]:
+                        prof[current_key] += " " + line_str
+                    else:
+                        prof[current_key] = line_str
+                        
+        if not prof['email']:
             em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
             if em_search:
-                email = em_search.group(0)
+                prof['email'] = em_search.group(0)
                 
-        if not name:
-            lines = [l.strip() for l in block.split('\n') if l.strip()]
-            if lines and not "@" in lines[0] and ":" not in lines[0]:
-                name = lines[0]
+        if not prof['name']:
+            lines_clean = [l.strip() for l in block.split('\n') if l.strip()]
+            if lines_clean and "@" not in lines_clean[0] and ":" not in lines_clean[0]:
+                prof['name'] = lines_clean[0]
 
-        if name or email:
-            professors.append({
-                "name": name if name else "Professor",
-                "email": email,
-                "expertise": exp,
-                "pub_ref": pub,
-                "bio": bio
-            })
+        if prof['name'] or prof['email']:
+            professors.append(prof)
             
     return professors
 
