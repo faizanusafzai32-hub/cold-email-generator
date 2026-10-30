@@ -21,7 +21,7 @@ FAIZAN_CV = {
     "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
 }
 
-tab1, tab2 = st.tabs(["📧 1. Dedicated Multi-Professor Sections & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
+tab1, tab2 = st.tabs(["⚡ 1. One-Click Bulk Data Parser & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
 
 def clean_pdf_text(text):
     if not isinstance(text, str):
@@ -38,9 +38,6 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
-    """
-    100% custom tailoring based strictly on the user-provided Research Interests and Paper.
-    """
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     
@@ -66,16 +63,68 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
             f"Having followed your academic contributions, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
 
+def parse_raw_professor_blocks(raw_text):
+    """
+    Robustly parses multiple professor blocks separated by empty lines or 'Name:' headers.
+    """
+    professors = []
+    # Split by blocks where each block starts with Name/Professor Name
+    raw_blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
+    
+    if len(raw_blocks) <= 1:
+        # Fallback split by double newlines if specific header not matched
+        raw_blocks = raw_text.strip().split('\n\n')
+
+    for block in raw_blocks:
+        if not block.strip():
+            continue
+            
+        name_match = re.search(r'(?:Name|Faculty Name|Professor Name)\s*:\s*(.*)', block, re.IGNORECASE)
+        email_match = re.search(r'(?:Email Address|Email)\s*:\s*(.*)', block, re.IGNORECASE)
+        exp_match = re.search(r'(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*(.*)', block, re.IGNORECASE)
+        pub_match = re.search(r'(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*(.*)', block, re.IGNORECASE)
+        bio_match = re.search(r'(?:Bio|About Me|Biography|Notes)\s*:\s*(.*)', block, re.IGNORECASE)
+        
+        name = name_match.group(1).strip() if name_match else ""
+        email = email_match.group(1).strip() if email_match else ""
+        exp = exp_match.group(1).strip() if exp_match else ""
+        pub = pub_match.group(1).strip() if pub_match else ""
+        bio = bio_match.group(1).strip() if bio_match else ""
+        
+        # If email tag was missing, grab via regex
+        if not email:
+            em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
+            if em_search:
+                email = em_search.group(0)
+                
+        # If name tag was missing, grab the first line if it looks like a name
+        if not name:
+            lines = [l.strip() for l in block.split('\n') if l.strip()]
+            if lines and not "@" in lines[0] and ":" not in lines[0]:
+                name = lines[0]
+
+        if name or email:
+            professors.append({
+                "name": name if name else "Professor",
+                "email": email,
+                "expertise": exp,
+                "pub_ref": pub,
+                "bio": bio
+            })
+            
+    return professors
+
 def get_tailored_statement_content(prof_name, focus_domain):
-    clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
+    clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
+    domain = focus_domain if focus_domain else "Remote Sensing & Spatial Analytics"
 
     sec2 = (
-        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research focus in {focus_domain}. "
+        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research focus in {domain}. "
         f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
         f"I am deeply motivated to apply advanced remote sensing and spatial analytics to bridge research gaps in your lab's domain."
     )
     sec3 = (
-        f"To synthesize my technical skills with your lab's mission in {focus_domain}, I propose focusing my dissertation on three core pillars: "
+        f"To synthesize my technical skills with your lab's mission in {domain}, I propose focusing my dissertation on three core pillars: "
         f"(1) developing scalable Python and Google Earth Engine (GEE) automation pipelines for high-resolution satellite time-series analysis; "
         f"(2) applying spatial statistical modeling and machine learning frameworks to evaluate environmental and spatial risk dynamics; and "
         f"(3) integrating multi-sensor spatial datasets to generate predictive simulation surfaces."
@@ -89,47 +138,35 @@ def get_tailored_statement_content(prof_name, focus_domain):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.subheader("📝 Dedicated Sections for Each Professor")
-    st.write("Har professor ke liye bilkul alag section diya gaya hai. Aap jitne marzi professors select karein, sabka data alag rahega aur email subject 100% unke research interests ke mutabiq aayega.")
-    
-    num_profs = st.number_input("Kitne professors ki details enter karni hain?", min_value=1, max_value=20, value=2, step=1)
-    
-    professors_data = []
-    
-    for i in range(int(num_profs)):
-        st.markdown(f"---")
-        st.markdown(f"### 👨‍🏫 Professor Section {i+1}")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Prof. Sunil Bhaskaran")
-            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., Sbhaskaran@gc.cuny.edu")
-        with col2:
-            p_expertise = st.text_input(f"Research Interests / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Applications of geospatial techniques, spatial-temporal models")
-            p_pub = st.text_input(f"Latest Published Paper {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Modelling urban heat island (UHI)...")
-            
-        p_bio = st.text_area(f"Bio / Additional Notes {i+1} (Optional):", key=f"bio_{i}", placeholder="e.g., Additional background or lab notes...")
-        
-        if p_name.strip() and p_email.strip():
-            professors_data.append({
-                "name": p_name.strip(),
-                "email": p_email.strip(),
-                "expertise": p_expertise.strip(),
-                "pub_ref": p_pub.strip(),
-                "bio": p_bio.strip()
-            })
+    st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
+    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain. Har professor ka block alag hona chahiye:")
 
-    st.markdown("---")
-    if st.button("📥 Generate & Download Excel File (Clean 4-Columns)"):
-        if not professors_data:
-            st.error("Kam az kam aik professor ki valid details (Name & Email) enter karna lazmi hai.")
+    sample_text = """Name: Prof. Sunil Bhaskaran
+Email Address: Sbhaskaran@gc.cuny.edu
+Research Interests: Applications of geospatial techniques, integrating spaceborne and airborne remotely sensed data with GIS
+Latest Published Paper 1: Modelling urban heat island (UHI) and thermal field variation and their relationship with land use indices over Delhi and Mumbai metro cities (2021)
+
+Name: Prof. Sean C. Ahearn
+Email Address: sahearn@hunter.cuny.edu
+Research Interests / Expertise: Spatial-temporal models, ecological modeling, digital image analysis
+Latest Published Paper 1: Preliminary Study on Humpback Wales Lunge Feeding in the New York Bight (2022)"""
+
+    pasted_data = st.text_area("📋 Paste Multiple Professors Raw Data Here (Up to 20+):", height=280, value="")
+
+    if st.button("🚀 Process & Generate Excel Package"):
+        parsed_profs = parse_raw_professor_blocks(pasted_data)
+        
+        if not parsed_profs:
+            st.error("Data parse nahi ho saka. Baraye meherbani 'Name:' aur 'Email Address:' labels check karein.")
         else:
+            st.success(f"Successfully extracted data for {len(parsed_profs)} professor(s)!")
+            
             excel_rows = []
-            for prof in professors_data:
+            for prof in parsed_profs:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses what the user typed in Research Interests
+                # Subject strictly uses the exact research area provided by user for that specific professor
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
@@ -158,7 +195,6 @@ with tab1:
                 })
 
             df = pd.DataFrame(excel_rows)
-            st.success(f"Successfully generated clean targeted email package for {len(excel_rows)} professor(s)!")
             st.dataframe(df[["Name", "Email Address", "Email Subject"]])
             
             buffer = io.BytesIO()
