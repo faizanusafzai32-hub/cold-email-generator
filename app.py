@@ -39,7 +39,7 @@ def clean_pdf_text(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Constructs Paragraph 1 matching your exact desired template flow.
+    Constructs Paragraph 1 using 'Ongoing Project' wording instead of Latest Published Papers.
     """
     exp_text = expertise.strip() if expertise and len(expertise.strip()) > 2 else "spatio-temporal models and spatial analysis"
     pub_text = pub_ref.strip() if pub_ref and len(pub_ref.strip()) > 3 else ""
@@ -47,7 +47,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     if pub_text:
         return (
             f"I have been closely following your work in {exp_text} - "
-            f"particularly your recent studies, such as \"{pub_text}\". "
+            f"particularly your ongoing projects and studies, such as \"{pub_text}\". "
             f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
     else:
@@ -57,9 +57,6 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
 
 def parse_raw_professor_blocks(raw_text):
-    """
-    Robust multi-line parser that correctly handles multi-line paper titles and research interests.
-    """
     professors = []
     raw_blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
     
@@ -88,9 +85,9 @@ def parse_raw_professor_blocks(raw_text):
             elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
                 current_key = 'expertise'
                 prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:', line_str, re.IGNORECASE):
+            elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
                 current_key = 'pub_ref'
-                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
                 prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
@@ -158,18 +155,18 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses the exact research area provided by user for that specific professor
+                # Subject strictly uses only the exact research area/expertise (no papers or projects in subject)
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
-                # Dynamically constructs paragraph 1 using your precise template
-                paper_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
+                # Dynamically constructs paragraph 1 using 'Ongoing Project' wording
+                project_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
                     f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-                    f"{paper_mention}\n\n"
+                    f"{project_mention}\n\n"
                     f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
                     f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
                     f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
