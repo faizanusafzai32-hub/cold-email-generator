@@ -38,6 +38,9 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def precise_keyword_focus(raw_text, bio_text=""):
+    if raw_text and len(raw_text.strip()) > 2:
+        return raw_text.strip()
+    
     combined = (str(raw_text) + " " + str(bio_text)).strip()
     if not combined:
         return "Remote Sensing & Spatial Analytics"
@@ -54,37 +57,13 @@ def precise_keyword_focus(raw_text, bio_text=""):
     for f in fillers:
         text = text.replace(f, "")
         
-    if "sustainability" in text or "political ecology" in text:
-        return "Political Ecology & Sustainability"
-    elif "gis education" in text or "geography education" in text:
-        return "GIS Education & Spatial Methods"
-    elif "cartography" in text or "geovisualization" in text:
-        return "Cartography & Geovisualization"
-    elif "hydrology" in text or "water" in text or "wetland" in text or "flood" in text:
-        return "Satellite Hydrology & Water Resources"
-    elif "geodesy" in text or "gps" in text or "meteorology" in text or "climate" in text:
-        return "Geodesy & GPS Meteorology"
-    elif "geoai" in text or "machine learning" in text or "deep learning" in text:
-        return "Remote Sensing & GeoAI"
-    elif "coastal" in text or "oceanography" in text or "biogeophysical" in text:
-        return "Coastal Oceanography & Biogeophysical Processes"
-    
-    # Auto-comma/ampersand formatting utility
     words = [w.strip() for w in re.split(r'[,;\n]+', raw_text) if w.strip()]
     if len(words) > 1:
         if len(words) == 2:
             return f"{words[0].title()} and {words[1].title()}"
         return f"{', '.join([w.title() for w in words[:-1]])} and {words[-1].title()}"
         
-    cleaned = re.sub(r'[^a-zA-Z\s]', '', text)
-    tokens = [w for w in cleaned.split() if len(w) > 2 and w not in ['the', 'and', 'for', 'with', 'our', 'are', 'use', 'space']]
-    
-    if tokens:
-        if len(tokens) >= 3:
-            return f"{tokens[0].title()}, {tokens[1].title()} and {tokens[2].title()}"
-        return " ".join([t.title() for t in tokens[:4]])
-    
-    return "Remote Sensing & Spatial Analytics"
+    return raw_text.strip() if raw_text.strip() else "Remote Sensing & Spatial Analytics"
 
 def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
     clean_expertise = precise_keyword_focus(expertise, bio)
@@ -115,12 +94,7 @@ def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
         )
 
 def parse_raw_professor_block(raw_text):
-    """
-    Parses unstructured or structured pasted text containing:
-    Name:, Email Address:, Research Interests areas or expertise:, Latest Published Paper:, Bio:
-    """
     professors = []
-    # Split blocks by double linebreaks or Name: patterns
     blocks = re.split(r'\n\s*\n|(?=Name\s*:)', raw_text)
     
     for block in blocks:
@@ -139,7 +113,6 @@ def parse_raw_professor_block(raw_text):
         pub = pub_match.group(1).strip() if pub_match else ""
         bio = bio_match.group(1).strip() if bio_match else ""
         
-        # Fallback regex search for emails if prefix was missed
         if not email:
             fallback_email = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
             if fallback_email:
@@ -160,86 +133,37 @@ def get_tailored_statement_content(prof_name, focus_domain):
     domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
 
-    if "coastal" in domain or "oceanography" in domain or "biogeophysical" in domain:
-        sec2 = (
-            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in coastal oceanography, wetlands, and biogeophysical processes. "
-            f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
-            f"I am deeply motivated to apply satellite time-series and machine learning for coastal habitat reconstruction and environmental monitoring."
-        )
-        sec3 = (
-            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
-            f"(1) fusing multi-sensor satellite imagery (Landsat, Sentinel) in GEE to map coastal habitat and vegetation distributions; "
-            f"(2) developing scalable machine learning workflows (random forests, spatial regression) to reconstruct longitudinal environmental maps; and "
-            f"(3) evaluating biogeophysical dynamics under changing climate conditions."
-        )
-        sec4 = (
-            f"By combining my solid foundation in satellite data analytics, Python workflow automation, and demonstrated Elsevier publishing experience, "
-            f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s research program."
-        )
-    elif "geodesy" in domain or "gps" in domain or "meteorology" in domain or "climate" in domain:
-        sec2 = (
-            f"My doctoral aspirations are strongly aligned with Dr. {clean_prof}'s pioneering research in geodesy, GPS meteorology, and climate-induced Earth system variations. "
-            f"With my robust background in high-precision spatial positioning, remote sensing time-series, and quantitative geospatial analytics, "
-            f"I am eager to apply advanced data processing techniques to measure crustal deformation, atmospheric water vapor, and climate signals using spaceborne geodetic networks."
-        )
-        sec3 = (
-            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
-            f"(1) processing high-frequency GPS and geodetic time-series data using scalable Python automation frameworks; "
-            f"(2) evaluating atmospheric precipitable water vapor and meteorological anomalies to refine climate tracking models; and "
-            f"(3) applying spatial-temporal statistical modeling to analyze geodetic deformation and environmental surface responses."
-        )
-        sec4 = (
-            f"By combining my strong quantitative background in spatial modeling, Python workflows, and demonstrated Elsevier publishing experience, "
-            f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s geodetic and climate research program."
-        )
-    elif "hydrology" in domain or "water" in domain or "wetland" in domain:
-        sec2 = (
-            f"My doctoral aspirations strongly align with Dr. {clean_prof}'s pioneering research in satellite hydrology and surface water elevation dynamics. "
-            f"Having conducted my M.Sc. thesis on spatiotemporal flood risk and LULC modeling, combined with 5.5+ years of geospatial Python and GEE workflows, "
-            f"I am deeply motivated to apply spaceborne remote sensing to bridge data gaps in complex river basins and ungauged wetland systems."
-        )
-        sec3 = (
-            f"To synthesize my technical skills with your lab's mission in {focus_domain.lower()}, I propose focusing my dissertation on three core pillars: "
-            f"(1) fusing multi-sensor satellite altimetry with SAR/optical imagery in GEE to map dynamic surface water storage; "
-            f"(2) developing scalable Python workflows to derive continuous river slope and discharge estimates; and "
-            f"(3) applying spatial statistics to model hydro-ecological risk and flood inundation scenarios."
-        )
-        sec4 = (
-            f"By combining my solid foundation in satellite time-series analysis, Python geospatial automation, and demonstrated Elsevier publishing experience, "
-            f"I am fully prepared to make immediate, innovative contributions to Dr. {clean_prof}'s research program."
-        )
-    else:
-        sec2 = (
-            f"My doctoral research interests are directly inspired by the scholarly contributions led by Dr. {clean_prof} in {focus_domain.lower()}. "
-            f"My academic foundation in M.Sc. Remote Sensing & GIS, combined with 5.5+ years of quantitative spatial analytics, offers an ideal alignment "
-            f"with your research group. I am eager to apply big data spatial analytics, Python automation, and satellite time-series analysis "
-            f"to advance empirical spatial research in your ongoing projects."
-        )
-        sec3 = (
-            f"To synthesize my technical skill set with your lab's mission in {focus_domain.lower()}, I propose a dissertation structured around: "
-            f"(1) integrating multi-decadal satellite observation time-series with spatial metrics to evaluate longitudinal change; "
-            f"(2) developing scalable Python and GEE computational workflows tailored to {focus_domain.lower()}; and "
-            f"(3) applying advanced spatial statistics to simulate predictive environmental and spatial risk surfaces."
-        )
-        sec4 = (
-            f"By combining my technical competencies in spatial modeling, demonstrated publishing experience in Elsevier journals, and focused alignment "
-            f"with Dr. {clean_prof}'s research vision, I am fully prepared to contribute effectively as a funded PhD researcher."
-        )
+    sec2 = (
+        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in {focus_domain}. "
+        f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
+        f"I am deeply motivated to apply advanced remote sensing and spatial analytics to bridge research gaps in your lab's domain."
+    )
+    sec3 = (
+        f"To synthesize my technical skills with your lab's mission in {focus_domain}, I propose focusing my dissertation on three core pillars: "
+        f"(1) developing scalable Python and Google Earth Engine (GEE) automation pipelines for high-resolution satellite time-series analysis; "
+        f"(2) applying spatial statistical modeling and machine learning frameworks to evaluate environmental and spatial risk dynamics; and "
+        f"(3) integrating multi-sensor spatial datasets to generate predictive simulation surfaces."
+    )
+    sec4 = (
+        f"By combining my solid foundation in spatial data science, workflow automation, and demonstrated Elsevier publishing experience, "
+        f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s research program."
+    )
 
     return clean_pdf_text(sec2), clean_pdf_text(sec3), clean_pdf_text(sec4)
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.subheader("⚡ One-Click Bulk Data Parser")
-    st.write("Aap niche diye gaye format ke mutabiq 1 ya kitne bhi professors ka text paste karein. System 1-click par auto-extract kar lega:")
+    st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
+    st.write("Aap yahan 1 sath 20 tak professors ka data paste kar sakte hain. Format yeh hona chahiye:")
 
-    example_format = """Name: Dr. Philippe Archambault
-Email Address: philippe.archambault@uqar.ca
-Research Interests areas or expertise: coastal oceanography, wetlands, biogeophysical processes
-Latest Published Paper: Use of Landsat imagery time-series and random forests classifier to reconstruct eelgrass bed distribution maps in Eeyou Istchee
-Bio: Focuses on marine ecology and remote sensing observation of coastal environments."""
+    st.code("""Name: Dr. John Doe
+Email Address: john.doe@university.edu
+Research Interests areas or expertise: coastal oceanography, wetlands
+Latest Published Paper: Use of Landsat imagery time-series...
+Bio: Focuses on marine ecology.""", language="text")
 
-    pasted_data = st.text_area("📋 Paste Professor Raw Text Block Here:", height=220, value=example_format)
+    # Startup box is now completely empty by default
+    pasted_data = st.text_area("📋 Paste Professor Raw Text Block Here:", height=250, value="")
 
     if st.button("🚀 Process & Generate Excel Package"):
         parsed_profs = parse_raw_professor_block(pasted_data)
@@ -253,9 +177,11 @@ Bio: Focuses on marine ecology and remote sensing observation of coastal environ
             for prof in parsed_profs:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
-                focus_clean = precise_keyword_focus(prof['expertise'], prof['bio'])
                 
-                subject = f"Prospective Ph.D. Applicant — {focus_clean} - Faizan Ahmad"
+                # Subject now strictly uses the exact research area/expertise provided by user
+                exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
+                subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
+                
                 para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
                 
                 email_body = (
@@ -315,7 +241,6 @@ with tab2:
                     for idx, row in df_uploaded.iterrows():
                         prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
                         subject = clean_pdf_text(str(row.get("Email Subject", "")))
-                        email_body = clean_pdf_text(str(row.get("Email Body", "")))
                         
                         focus = "Remote Sensing & Spatial Analytics"
                         if "—" in subject and "-" in subject:
@@ -325,7 +250,6 @@ with tab2:
                             if len(parts) >= 2:
                                 focus = parts[0].replace("Prospective Ph.D. Applicant", "").replace(":", "").strip()
                                 
-                        focus = clean_pdf_text(precise_keyword_focus(focus))
                         sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
                         
                         clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
