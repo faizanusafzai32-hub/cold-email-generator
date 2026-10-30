@@ -21,7 +21,7 @@ FAIZAN_CV = {
     "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
 }
 
-tab1, tab2 = st.tabs(["⚡ 1. Fast One-Click Raw Text Parser & Excel Generator", "📄 2. Generate Research Statement PDFs (ZIP)"])
+tab1, tab2 = st.tabs(["📧 1. Dedicated Multi-Professor Sections & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
 
 def clean_pdf_text(text):
     if not isinstance(text, str):
@@ -37,45 +37,18 @@ def clean_pdf_text(text):
                    .replace('\u2013', '-'))
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
-def precise_keyword_focus(raw_text, bio_text=""):
-    if raw_text and len(raw_text.strip()) > 2:
-        return raw_text.strip()
-    
-    combined = (str(raw_text) + " " + str(bio_text)).strip()
-    if not combined:
-        return "Remote Sensing & Spatial Analytics"
-    
-    text = combined.lower()
-    fillers = [
-        "he focuses on the intersections of", "she focuses on the intersections of",
-        "he focuses on", "she focuses on", "his research", "her research",
-        "interests include", "research interests", "geography and",
-        "interdisciplinary applied gis", "qualitative and quantitative methods",
-        "natural resource use", "the building of", "globalization", 
-        "territoriality, identity and culture", "academic interests"
-    ]
-    for f in fillers:
-        text = text.replace(f, "")
-        
-    words = [w.strip() for w in re.split(r'[,;\n]+', raw_text) if w.strip()]
-    if len(words) > 1:
-        if len(words) == 2:
-            return f"{words[0].title()} and {words[1].title()}"
-        return f"{', '.join([w.title() for w in words[:-1]])} and {words[-1].title()}"
-        
-    return raw_text.strip() if raw_text.strip() else "Remote Sensing & Spatial Analytics"
-
-def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
-    clean_expertise = precise_keyword_focus(expertise, bio)
-    
+def generate_dynamic_email_paragraph1(expertise, pub_ref):
+    """
+    100% custom tailoring based strictly on the user-provided Research Interests and Paper.
+    """
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     
     if has_exp and has_pub:
         return (
             f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your research area in {clean_expertise.lower()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
-            f"I am deeply impressed by how your lab leverages advanced spatial analytics and Earth Observation."
+            f"Having followed your research focus in {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
+            f"I am deeply impressed by how your lab integrates advanced spatial analytics with Earth Observation."
         )
     elif has_pub:
         return (
@@ -85,7 +58,7 @@ def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
     elif has_exp:
         return (
             f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your research focus in {clean_expertise.lower()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"Having followed your work in {expertise.strip()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
     else:
         return (
@@ -93,48 +66,11 @@ def generate_dynamic_email_paragraph1(prof_name, expertise, pub_ref, bio):
             f"Having followed your academic contributions, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
 
-def parse_raw_professor_block(raw_text):
-    professors = []
-    blocks = re.split(r'\n\s*\n|(?=Name\s*:)', raw_text)
-    
-    for block in blocks:
-        if not block.strip():
-            continue
-            
-        name_match = re.search(r'(?:Name|Faculty Name|Professor Name)\s*:\s*(.*)', block, re.IGNORECASE)
-        email_match = re.search(r'(?:Email Address|Email)\s*:\s*(.*)', block, re.IGNORECASE)
-        exp_match = re.search(r'(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*(.*)', block, re.IGNORECASE)
-        pub_match = re.search(r'(?:Latest Published Paper|Key Publication|Publication|Paper)\s*:\s*(.*)', block, re.IGNORECASE)
-        bio_match = re.search(r'(?:Bio|About Me|Biography)\s*:\s*(.*)', block, re.IGNORECASE)
-        
-        name = name_match.group(1).strip() if name_match else ""
-        email = email_match.group(1).strip() if email_match else ""
-        exp = exp_match.group(1).strip() if exp_match else ""
-        pub = pub_match.group(1).strip() if pub_match else ""
-        bio = bio_match.group(1).strip() if bio_match else ""
-        
-        if not email:
-            fallback_email = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
-            if fallback_email:
-                email = fallback_email.group(0)
-                
-        if name or email:
-            professors.append({
-                "name": name if name else "Professor",
-                "email": email,
-                "expertise": exp,
-                "pub_ref": pub,
-                "bio": bio
-            })
-            
-    return professors
-
 def get_tailored_statement_content(prof_name, focus_domain):
-    domain = focus_domain.lower()
     clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").strip()
 
     sec2 = (
-        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research in {focus_domain}. "
+        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research focus in {focus_domain}. "
         f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
         f"I am deeply motivated to apply advanced remote sensing and spatial analytics to bridge research gaps in your lab's domain."
     )
@@ -153,36 +89,51 @@ def get_tailored_statement_content(prof_name, focus_domain):
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
-    st.write("Aap yahan 1 sath 20 tak professors ka data paste kar sakte hain. Format yeh hona chahiye:")
-
-    st.code("""Name: Dr. John Doe
-Email Address: john.doe@university.edu
-Research Interests areas or expertise: coastal oceanography, wetlands
-Latest Published Paper: Use of Landsat imagery time-series...
-Bio: Focuses on marine ecology.""", language="text")
-
-    # Startup box is now completely empty by default
-    pasted_data = st.text_area("📋 Paste Professor Raw Text Block Here:", height=250, value="")
-
-    if st.button("🚀 Process & Generate Excel Package"):
-        parsed_profs = parse_raw_professor_block(pasted_data)
+    st.subheader("📝 Dedicated Sections for Each Professor")
+    st.write("Har professor ke liye bilkul alag section diya gaya hai. Aap jitne marzi professors select karein, sabka data alag rahega aur email subject 100% unke research interests ke mutabiq aayega.")
+    
+    num_profs = st.number_input("Kitne professors ki details enter karni hain?", min_value=1, max_value=20, value=2, step=1)
+    
+    professors_data = []
+    
+    for i in range(int(num_profs)):
+        st.markdown(f"---")
+        st.markdown(f"### 👨‍🏫 Professor Section {i+1}")
         
-        if not parsed_profs:
-            st.error("Data parse nahi ho saka. Baraye meherbani 'Name:' aur 'Email Address:' headers verify karein.")
-        else:
-            st.success(f"Successfully extracted data for {len(parsed_profs)} professor(s)!")
+        col1, col2 = st.columns(2)
+        with col1:
+            p_name = st.text_input(f"Professor Name {i+1}:", key=f"name_{i}", placeholder="e.g., Prof. Sunil Bhaskaran")
+            p_email = st.text_input(f"Email Address {i+1}:", key=f"email_{i}", placeholder="e.g., Sbhaskaran@gc.cuny.edu")
+        with col2:
+            p_expertise = st.text_input(f"Research Interests / Expertise {i+1}:", key=f"exp_{i}", placeholder="e.g., Applications of geospatial techniques, spatial-temporal models")
+            p_pub = st.text_input(f"Latest Published Paper {i+1} (Optional):", key=f"pub_{i}", placeholder="e.g., Modelling urban heat island (UHI)...")
             
+        p_bio = st.text_area(f"Bio / Additional Notes {i+1} (Optional):", key=f"bio_{i}", placeholder="e.g., Additional background or lab notes...")
+        
+        if p_name.strip() and p_email.strip():
+            professors_data.append({
+                "name": p_name.strip(),
+                "email": p_email.strip(),
+                "expertise": p_expertise.strip(),
+                "pub_ref": p_pub.strip(),
+                "bio": p_bio.strip()
+            })
+
+    st.markdown("---")
+    if st.button("📥 Generate & Download Excel File (Clean 4-Columns)"):
+        if not professors_data:
+            st.error("Kam az kam aik professor ki valid details (Name & Email) enter karna lazmi hai.")
+        else:
             excel_rows = []
-            for prof in parsed_profs:
-                full_name = prof['name'].replace("Dr.", "").replace("Dr", "").strip()
+            for prof in professors_data:
+                full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject now strictly uses the exact research area/expertise provided by user
+                # Subject strictly uses what the user typed in Research Interests
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
-                para1 = generate_dynamic_email_paragraph1(prof['name'], prof['expertise'], prof['pub_ref'], prof['bio'])
+                para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
@@ -207,6 +158,7 @@ Bio: Focuses on marine ecology.""", language="text")
                 })
 
             df = pd.DataFrame(excel_rows)
+            st.success(f"Successfully generated clean targeted email package for {len(excel_rows)} professor(s)!")
             st.dataframe(df[["Name", "Email Address", "Email Subject"]])
             
             buffer = io.BytesIO()
@@ -252,7 +204,7 @@ with tab2:
                                 
                         sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
                         
-                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace(".", "").strip().replace(" ", "_")
+                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace(".", "").strip().replace(" ", "_")
                         file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
                         
                         pdf = FPDF(orientation='P', unit='mm', format='A4')
@@ -286,7 +238,7 @@ with tab2:
                         
                         # Section 2: Unique Domain Alignment
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
+                        pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '').replace('Prof. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, sec2_text)
                         pdf.ln(2)
