@@ -39,32 +39,21 @@ def clean_pdf_text(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Intelligently maps Professor's Research Interests & Latest Published Paper 
-    directly into the 1st paragraph of the email body with proper quotes.
+    Constructs Paragraph 1 matching your exact desired template flow.
     """
-    has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
-    has_exp = bool(expertise and len(expertise.strip()) > 2)
+    exp_text = expertise.strip() if expertise and len(expertise.strip()) > 2 else "spatio-temporal models and spatial analysis"
+    pub_text = pub_ref.strip() if pub_ref and len(pub_ref.strip()) > 3 else ""
     
-    if has_exp and has_pub:
+    if pub_text:
         return (
-            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your research area in {expertise.strip()}, I was particularly drawn to your publication, \"{pub_ref.strip()}\". "
-            f"I am deeply impressed by how your lab integrates advanced spatial analytics with Earth Observation."
-        )
-    elif has_pub:
-        return (
-            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having read your publication, \"{pub_ref.strip()}\", I am deeply impressed by how your lab leverages quantitative spatial analytics with Earth Observation."
-        )
-    elif has_exp:
-        return (
-            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your research focus in {expertise.strip()}, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"I have been closely following your work in {exp_text} - "
+            f"particularly your recent studies, such as \"{pub_text}\". "
+            f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
     else:
         return (
-            f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-            f"Having followed your academic contributions, I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"I have been closely following your work in {exp_text}. "
+            f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
 
 def parse_raw_professor_blocks(raw_text):
@@ -106,7 +95,6 @@ def parse_raw_professor_blocks(raw_text):
                 current_key = 'bio'
                 prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             else:
-                # Continuation of multi-line field (like long paper titles or research areas)
                 if current_key and current_key in prof:
                     if prof[current_key]:
                         prof[current_key] += " " + line_str
@@ -153,17 +141,7 @@ def get_tailored_statement_content(prof_name, focus_domain):
 # ==================== TAB 1 ====================
 with tab1:
     st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
-    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain. Har professor ka block alag hona chahiye:")
-
-    sample_text = """Name: Prof. Sunil Bhaskaran
-Email Address: Sbhaskaran@gc.cuny.edu
-Research Interests: Applications of geospatial techniques, integrating spaceborne and airborne remotely sensed data with GIS
-Latest Published Paper 1: Modelling urban heat island (UHI) and thermal field variation and their relationship with land use indices over Delhi and Mumbai metro cities (2021)
-
-Name: Prof. Sean C. Ahearn
-Email Address: sahearn@hunter.cuny.edu
-Research Interests / Expertise: Spatial-temporal models, ecological modeling, digital image analysis
-Latest Published Paper 1: Preliminary Study on Humpback Wales Lunge Feeding in the New York Bight (2022)"""
+    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain. Startup box bilkul khali hai:")
 
     pasted_data = st.text_area("📋 Paste Multiple Professors Raw Data Here (Up to 20+):", height=280, value="")
 
@@ -184,17 +162,20 @@ Latest Published Paper 1: Preliminary Study on Humpback Wales Lunge Feeding in t
                 exact_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 subject = f"Prospective Ph.D. Applicant — {exact_focus} - Faizan Ahmad"
                 
-                # Dynamically constructs paragraph 1 including both Research Interests & Published Paper
-                para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
+                # Dynamically constructs paragraph 1 using your precise template
+                paper_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
-                    f"{para1}\n\n"
-                    f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics), bringing over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience-complemented by a peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
-                    f"Given the strong overlap between your work and my background in spatial analytics, I am eager to contribute to your ongoing research projects.\n\n"
+                    f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
+                    f"{paper_mention}\n\n"
+                    f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
+                    f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
+                    f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
+                    f"Given the close alignment between your lab’s work and my background in geospatial data and spatial analysis, I am very keen to contribute to your ongoing research initiatives.\n\n"
                     f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
-                    f"I have attached my CV for your review and would welcome the opportunity to connect. Thank you very much for your time and leadership.\n\n\n"
+                    f"I have attached my CV for your review. Thank you very much for your time and guidance.\n\n\n"
                     f"Best Regards,\n"
                     f"Faizan Ahmad\n"
                     f"Sr. GIS Analyst\n"
