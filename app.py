@@ -42,6 +42,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     pub_text = pub_ref.strip() if pub_ref and len(pub_ref.strip()) > 3 else ""
     
     if pub_text:
+        # Strictly using "particularly your studies, such as" as requested
         return (
             f"I have been closely following your work in {exp_text} - "
             f"particularly your studies, such as \"{pub_text}\". "
