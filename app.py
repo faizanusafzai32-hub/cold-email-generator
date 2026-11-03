@@ -44,7 +44,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     if pub_text:
         return (
             f"I have been closely following your work in {exp_text} - "
-            f"particularly your ongoing projects and studies, such as \"{pub_text}\". "
+            f"particularly your studies, such as \"{pub_text}\". "
             f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
         )
     else:
@@ -87,7 +87,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -152,20 +152,19 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses ONLY the research area/expertise, completely stripping out any papers/projects
+                # Subject strictly uses ONLY the research area/expertise, completely clean of papers/projects
                 raw_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
-                # Extra safety filter to remove any accidental paper text if present in raw input
                 clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
                 
                 subject = f"Prospective Ph.D. Applicant — {clean_focus} - Faizan Ahmad"
                 
-                project_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
+                studies_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
                     f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-                    f"{project_mention}\n\n"
+                    f"{studies_mention}\n\n"
                     f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
                     f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
                     f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
@@ -212,7 +211,6 @@ with tab2:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
             
-            # Robust cleaning for uploaded excel files to strip any papers/projects from subject
             cleaned_subjects = []
             for sub in df_uploaded.get("Email Subject", []):
                 sub_str = str(sub)
@@ -220,7 +218,6 @@ with tab2:
                     parts = sub_str.split("—")
                     prefix = parts[0].strip()
                     core = parts[1].strip()
-                    # Strip everything starting with Latest Published or Ongoing Project
                     core_clean = re.split(r'Latest Published|Ongoing Project|Paper:', core, flags=re.IGNORECASE)[0].strip()
                     cleaned_subjects.append(f"{prefix} — {core_clean}")
                 else:
