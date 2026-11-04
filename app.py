@@ -38,25 +38,20 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def clean_raw_labels(text):
-    """
-    Strips out any leftover 'Latest Published Papers:', 'Recent Publications:', 
-    or artificial text markers that corrupt the natural flow.
-    """
+    """Strips out any leftover 'Latest Published Papers:' or artificial markers."""
     if not text:
         return ""
-    # Strip common label prefixes
     pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project)\s*:\s*'
     cleaned = re.sub(pattern, '', text.strip(), flags=re.IGNORECASE)
     return cleaned.strip()
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Generates 100% Pretha-compliant, natural, human academic openings with ZERO template smell.
+    Smooth, hyphen-connected professional academic opening compliant with Pretha's rules.
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
     
-    # If raw input had pub embedded inside expertise field, extract it clean
     if "Latest Published Papers:" in clean_exp:
         parts = re.split(r'Latest Published Papers:\s*', clean_exp, flags=re.IGNORECASE)
         clean_exp = parts[0].strip().rstrip(',')
@@ -69,9 +64,9 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     if has_exp and has_pub:
         return (
             f"While reviewing your work in {clean_exp}—"
-            f"particularly your research on {clean_pub}—"
-            f"I was deeply impressed by your analytical approach. "
-            f"My own background in geospatial analytics and spatial modeling strongly aligns with evaluating these complex spatial dynamics."
+            f"particularly your publications on {clean_pub}—"
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
     elif has_exp:
         return (
@@ -81,15 +76,15 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
     elif has_pub:
         return (
-            f"While reviewing your research on {clean_pub}, "
-            f"I found your methodologies and spatial frameworks exceptionally rigorous. "
-            f"My technical background in geospatial workflows closely mirrors these research objectives."
+            f"While reviewing your publications on {clean_pub}, "
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
     else:
         return (
-            f"While reviewing your research group's contributions to spatial data science, "
-            f"I found your application of spatial modeling particularly inspiring. "
-            f"My core expertise in handling spatial databases and automated workflows directly complements your research direction."
+            f"While reviewing your work in spatial data science and analytics, "
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
 
 def parse_raw_professor_blocks(raw_text):
@@ -126,7 +121,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
