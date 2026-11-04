@@ -38,20 +38,43 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
-    exp_text = expertise.strip() if expertise and len(expertise.strip()) > 2 else "spatio-temporal models and spatial analysis"
-    pub_text = pub_ref.strip() if pub_ref and len(pub_ref.strip()) > 3 else ""
+    """
+    New Dynamic Paragraph Structure tailored specifically to match user's exact requested style.
+    Handles combinations of Research Area / Focus and Paper / Ongoing Work seamlessly.
+    """
+    has_exp = bool(expertise and len(expertise.strip()) > 2)
+    has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
     
-    if pub_text:
-        # Strictly using "particularly your studies, such as" as requested
+    exp_text = expertise.strip() if has_exp else ""
+    pub_text = pub_ref.strip() if has_pub else ""
+    
+    if has_exp and has_pub:
         return (
-            f"I have been closely following your work in {exp_text} - "
-            f"particularly your studies, such as \"{pub_text}\". "
-            f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"While reviewing your recent work in {exp_text}, "
+            f"I found your study on \"{pub_text}\" particularly insightful, "
+            f"especially how it addresses spatial patterns and environmental risks. "
+            f"I have been exploring similar spatial modeling questions in my own research."
+        )
+    elif has_exp:
+        return (
+            f"While reviewing your recent work in {exp_text}, "
+            f"I found your research focus particularly insightful, "
+            f"especially how it addresses spatial patterns and environmental risks. "
+            f"I have been exploring similar spatial modeling questions in my own research."
+        )
+    elif has_pub:
+        return (
+            f"While reviewing your recent work in spatial data science, "
+            f"I found your study on \"{pub_text}\" particularly insightful, "
+            f"especially how it addresses spatial patterns and environmental risks. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
     else:
         return (
-            f"I have been closely following your work in {exp_text}. "
-            f"I am deeply impressed by how your lab integrates quantitative spatial analytics with Earth Observation."
+            f"While reviewing your recent work in spatial data science and spatial analytics, "
+            f"I found your lab's research focus particularly insightful, "
+            f"especially how it addresses spatial patterns and environmental risks. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
 
 def parse_raw_professor_blocks(raw_text):
@@ -88,7 +111,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -153,19 +176,20 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses ONLY the research area/expertise, completely clean of papers/projects
+                # Clean subject line - strictly Research Focus only
                 raw_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
                 clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
                 
                 subject = f"Prospective Ph.D. Applicant — {clean_focus} - Faizan Ahmad"
                 
-                studies_mention = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
+                # Generate new dynamic first paragraph
+                custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
                     f"I hope you are doing well.\n\n"
                     f"I am writing to express my strong interest in joining your research group as a Ph.D. candidate. "
-                    f"{studies_mention}\n\n"
+                    f"{custom_para1}\n\n"
                     f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
                     f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
                     f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
