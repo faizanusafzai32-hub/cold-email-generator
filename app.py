@@ -39,37 +39,35 @@ def clean_pdf_text(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Short, crisp, and direct opening matching your professional preference.
+    Expert Ph.D. Admissions Advisor format: Natural, conversational, tailored,
+    completely avoiding robotic labels, avoiding word repetition, and bridging to spatial modeling.
     """
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
     
-    exp_text = expertise.strip() if has_exp else ""
+    exp_text = expertise.strip() if has_exp else "spatial data science"
     pub_text = pub_ref.strip() if has_pub else ""
     
     if has_exp and has_pub:
         return (
-            f"While reviewing your work in {exp_text}, especially your recent work "
-            f"such as \"{pub_text}\", I found it particularly insightful, especially how it addresses spatial patterns and environmental risks. "
-            f"I have been exploring similar spatial modeling questions in my own research."
+            f"I have been following your research in {exp_text}, "
+            f"notably your work examining themes such as \"{pub_text}\". "
+            f"Your insights into environmental risks and spatial patterns closely mirror the questions I explore in my spatial modeling work."
         )
     elif has_exp:
         return (
-            f"While reviewing your work in {exp_text}, especially your recent work, "
-            f"I found your research focus particularly insightful, especially how it addresses spatial patterns and environmental risks. "
-            f"I have been exploring similar spatial modeling questions in my own research."
+            f"I have been following your research in {exp_text}. "
+            f"Your insights into environmental risks and spatial dynamics closely mirror the questions I explore in my geospatial analytics work."
         )
     elif has_pub:
         return (
-            f"While reviewing your work in spatial data science, especially your recent work "
-            f"such as \"{pub_text}\", I found it particularly insightful, especially how it addresses spatial patterns and environmental risks. "
-            f"I have been exploring similar spatial modeling questions in my own research."
+            f"I have been following your recent studies, notably your work examining themes such as \"{pub_text}\". "
+            f"Your insights into environmental risks and spatial patterns closely mirror the questions I explore in my spatial modeling work."
         )
     else:
         return (
-            f"While reviewing your work in spatial data science and spatial analytics, especially your recent work, "
-            f"I found your lab's research focus particularly insightful, especially how it addresses spatial patterns and environmental risks. "
-            f"I have been exploring similar spatial modeling questions in my own research."
+            f"I have been following your research group's contributions to spatial data science. "
+            f"Your insights into environmental risks and spatial dynamics closely mirror the questions I explore in my geospatial analytics work."
         )
 
 def parse_raw_professor_blocks(raw_text):
@@ -100,13 +98,13 @@ def parse_raw_professor_blocks(raw_text):
                 prof['email'] = re.sub(r'^(?:Email Address|Email)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
                 current_key = 'expertise'
-                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
                 current_key = 'pub_ref'
-                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -171,18 +169,12 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Extracting a concise 2-4 word Core Research Keyword for Option 2 format
+                # Option 2 Subject Format (Max 2-4 words concise keyword)
                 raw_focus = prof['expertise'] if prof['expertise'] else "Spatial Analytics"
                 clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
-                
-                # Keep keyword concise (max 4 words)
                 words = clean_focus.split()
-                if len(words) > 3:
-                    concise_keyword = " ".join(words[:3])
-                else:
-                    concise_keyword = clean_focus
+                concise_keyword = " ".join(words[:3]) if len(words) > 3 else clean_focus
                 
-                # Option 2 Subject Format
                 subject = f"Prospective Ph.D. Student – {concise_keyword} | M.Sc. Remote Sensing & GIS"
                 
                 custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
@@ -237,19 +229,10 @@ with tab2:
         try:
             df_uploaded = pd.read_excel(uploaded_file)
             
-            cleaned_subjects = []
-            for sub in df_uploaded.get("Email Subject", []):
-                sub_str = str(sub)
-                if "Student" in sub_str or "Prospective" in sub_str:
-                    cleaned_subjects.append(sub_str)
-                else:
-                    cleaned_subjects.append(sub_str)
-            df_uploaded["Email Subject"] = cleaned_subjects
-            
             st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
             st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
             
-            if st.button("📥 Generate & Download Research Statements (ZIP)"):
+            if st.button("📥 Download Research Statements (ZIP)"):
                 zip_buffer = io.BytesIO()
                 
                 with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
