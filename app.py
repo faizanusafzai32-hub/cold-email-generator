@@ -182,4 +182,151 @@ with tab1:
                 custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
                 email_body = (
-                    f
+                    f"Dear Dr. {last_name},\n\n"
+                    f"I hope you are doing well.\n\n"
+                    f"{custom_para1}\n\n"
+                    f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
+                    f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
+                    f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
+                    f"Given the close alignment between your lab’s work and my background in geospatial data and spatial analysis, I am very keen to contribute to your ongoing research initiatives.\n\n"
+                    f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
+                    f"I have attached my CV for your review. Thank you very much for your time and guidance.\n\n\n"
+                    f"Best Regards,\n"
+                    f"Faizan Ahmad\n"
+                    f"Sr. GIS Analyst\n"
+                    f"WhatsApp/Mob: {FAIZAN_CV['phone']}\n"
+                    f"{FAIZAN_CV['linkedin']}"
+                )
+                
+                excel_rows.append({
+                    "Name": prof['name'],
+                    "Email Address": prof['email'],
+                    "Email Subject": clean_pdf_text(subject),
+                    "Email Body": clean_pdf_text(email_body)
+                })
+
+            df = pd.DataFrame(excel_rows)
+            st.dataframe(df[["Name", "Email Address", "Email Subject"]])
+            
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name="Targeted Emails")
+            buffer.seek(0)
+            
+            st.download_button(
+                label="📥 Download Targeted_Faculty_Emails.xlsx",
+                data=buffer,
+                file_name="Targeted_Faculty_Emails.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+# ==================== TAB 2 ====================
+with tab2:
+    st.subheader("📄 Bulk Generate Tailored Research Statement PDFs")
+    st.write("Upload your Excel file (`Targeted_Faculty_Emails.xlsx`) to generate unique A4 PDFs.")
+    
+    uploaded_file = st.file_uploader("Upload Faculty Excel File (.xlsx):", type=["xlsx"])
+    
+    if uploaded_file is not None:
+        try:
+            df_uploaded = pd.read_excel(uploaded_file)
+            
+            cleaned_subjects = []
+            for sub in df_uploaded.get("Email Subject", []):
+                sub_str = str(sub)
+                if "—" in sub_str:
+                    parts = sub_str.split("—")
+                    prefix = parts[0].strip()
+                    core = parts[1].strip()
+                    core_clean = re.split(r'Latest Published|Ongoing Project|Paper:', core, flags=re.IGNORECASE)[0].strip()
+                    cleaned_subjects.append(f"{prefix} — {core_clean}")
+                else:
+                    cleaned_subjects.append(sub_str)
+            df_uploaded["Email Subject"] = cleaned_subjects
+            
+            st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
+            st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
+            
+            if st.button("📥 Generate & Download Research Statements (ZIP)"):
+                zip_buffer = io.BytesIO()
+                
+                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+                    for idx, row in df_uploaded.iterrows():
+                        prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
+                        subject = clean_pdf_text(str(row.get("Email Subject", "")))
+                        
+                        focus = "Remote Sensing & Spatial Analytics"
+                        if "—" in subject and "-" in subject:
+                            focus = subject.split("—")[1].split("-")[0].strip()
+                        elif "-" in subject:
+                            parts = subject.split("-")
+                            if len(parts) >= 2:
+                                focus = parts[0].replace("Prospective Ph.D. Applicant", "").replace(":", "").strip()
+                                
+                        sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
+                        
+                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace(".", "").strip().replace(" ", "_")
+                        file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
+                        
+                        pdf = FPDF(orientation='P', unit='mm', format='A4')
+                        pdf.set_margins(left=15, top=15, right=15)
+                        pdf.add_page()
+                        pdf.set_auto_page_break(auto=True, margin=15)
+                        
+                        # Header
+                        pdf.set_font("Helvetica", style="B", size=13)
+                        pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
+                        
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, clean_pdf_text(FAIZAN_CV["name"]), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.set_font("Helvetica", style="B", size=9)
+                        pdf.cell(0, 4, "Sr. GIS Analyst", new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, clean_pdf_text(f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}"), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, clean_pdf_text(f"{FAIZAN_CV['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.ln(3)
+                        
+                        # Research Focus Header
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.multi_cell(0, 4, clean_pdf_text(f"Research Focus: Integrating Spatial Analytics, Python Workflows, and {focus}"), align="L")
+                        pdf.ln(2)
+                        
+                        # Section 1: Academic Foundation
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, clean_pdf_text("My academic credentials include an M.Sc. in Remote Sensing & GIS, backed by over 5.5 years of professional and research experience, including roles as a Sr. GIS Analyst working with US-scale spatial databases. My technical competencies span Python, SQL, GEE, and spatial statistical modeling. Demonstrating my academic research capability, I co-authored peer-reviewed research published in the Journal for Nature Conservation (Elsevier)."))
+                        pdf.ln(2)
+                        
+                        # Section 2: Unique Domain Alignment
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '').replace('Prof. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, sec2_text)
+                        pdf.ln(2)
+                        
+                        # Section 3: Unique Proposed Directions
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, sec3_text)
+                        pdf.ln(2)
+                        
+                        # Section 4: Dynamic Conclusion
+                        pdf.set_font("Helvetica", style="B", size=10)
+                        pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
+                        pdf.set_font("Helvetica", size=9)
+                        pdf.multi_cell(0, 3.8, sec4_text)
+                        
+                        pdf_bytes = bytes(pdf.output())
+                        zip_file.writestr(file_name, pdf_bytes)
+                        
+                zip_buffer.seek(0)
+                st.success(f"Successfully generated 100% unique, domain-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
+                st.download_button(
+                    label="📥 Download Research Statements (ZIP)",
+                    data=zip_buffer,
+                    file_name="Research_Statements_ZIP.zip",
+                    mime="application/zip"
+                )
+        except Exception as e:
+            st.error(f"Error reading Excel file: {e}")
