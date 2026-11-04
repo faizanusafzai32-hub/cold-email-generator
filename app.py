@@ -47,44 +47,21 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Grammatically correct professional opening featuring the exact connector —particularly your work on...
+    Strictly forces the exact dashed connector for all professors.
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
     
-    if "Latest Published Papers:" in clean_exp:
-        parts = re.split(r'Latest Published Papers:\s*', clean_exp, flags=re.IGNORECASE)
-        clean_exp = parts[0].strip().rstrip(',')
-        if len(parts) > 1 and not clean_pub:
-            clean_pub = parts[1].strip()
+    if not clean_exp:
+        clean_exp = "spatial data science and analytics"
+    if not clean_pub:
+        clean_pub = "spatiotemporal patterns and spatial modeling"
 
-    has_exp = bool(clean_exp and len(clean_exp) > 2)
-    has_pub = bool(clean_pub and len(clean_pub) > 3)
-
-    if has_exp and has_pub:
-        return (
-            f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
-    elif has_exp:
-        return (
-            f"While reviewing your work in {clean_exp}, "
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
-    elif has_pub:
-        return (
-            f"While reviewing your work on {clean_pub}, "
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
-    else:
-        return (
-            f"While reviewing your work in spatial data science and analytics, "
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
+    return (
+        f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
+        f"I found your research focus particularly insightful. "
+        f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
+    )
 
 def parse_raw_professor_blocks(raw_text):
     professors = []
