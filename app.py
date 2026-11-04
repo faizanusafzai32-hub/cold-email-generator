@@ -37,32 +37,40 @@ def clean_pdf_text(text):
                    .replace('\u2013', '-'))
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
+def clean_input_label(text):
+    """Strips stiff artificial headers like 'Latest Published Papers:' or 'Ongoing Project:' from raw text."""
+    if not text:
+        return ""
+    pattern = r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*'
+    cleaned = re.sub(pattern, '', text.strip(), flags=re.IGNORECASE)
+    return cleaned.strip()
+
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Updated to match your exact preferred natural, fluent, and professional style.
+    100% Conversational Opening - Completely removes artificial labels and weaves titles into natural academic flow.
     """
-    has_exp = bool(expertise and len(expertise.strip()) > 2)
-    has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
+    clean_exp = clean_input_label(expertise)
+    clean_pub = clean_input_label(pub_ref)
     
-    exp_text = expertise.strip() if has_exp else "spatial data science"
-    pub_text = pub_ref.strip() if has_pub else ""
+    has_exp = bool(clean_exp and len(clean_exp) > 2)
+    has_pub = bool(clean_pub and len(clean_pub) > 3)
     
     if has_exp and has_pub:
         return (
-            f"While reviewing your work in {exp_text}—"
-            f"particularly your studies on {pub_text}—"
+            f"While reviewing your work in {clean_exp}—"
+            f"particularly your publications on \"{clean_pub}\"—"
             f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
             f"I have been exploring similar spatial modeling questions in my own research."
         )
     elif has_exp:
         return (
-            f"While reviewing your work in {exp_text}, "
+            f"While reviewing your work in {clean_exp}, "
             f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
             f"I have been exploring similar spatial modeling questions in my own research."
         )
     elif has_pub:
         return (
-            f"While reviewing your studies on {pub_text}, "
+            f"While reviewing your publications on \"{clean_pub}\", "
             f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
             f"I have been exploring similar spatial modeling questions in my own research."
         )
@@ -107,7 +115,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -172,15 +180,18 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Option 2 Subject Format (Max 2-4 words concise keyword)
-                raw_focus = prof['expertise'] if prof['expertise'] else "Spatial Analytics"
-                clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
-                words = clean_focus.split()
-                concise_keyword = " ".join(words[:3]) if len(words) > 3 else clean_focus
+                # Clean Subject Keyword (Max 2-4 words)
+                raw_focus = clean_input_label(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
+                words = raw_focus.split()
+                concise_keyword = " ".join(words[:3]) if len(words) > 3 else raw_focus
                 
                 subject = f"Prospective Ph.D. Student – {concise_keyword} | M.Sc. Remote Sensing & GIS"
                 
                 custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
+                
+                # Specific Value Proposition line instead of generic statement
+                prof_domain = raw_focus.lower() if raw_focus else "your lab's research focus"
+                value_statement = f"Given your lab's focus on {prof_domain}, I see a strong opportunity to leverage my expertise in automated spatial workflows and large-scale spatial modeling to advance your ongoing research initiatives."
                 
                 email_body = (
                     f"Dear Dr. {last_name},\n\n"
@@ -188,8 +199,8 @@ with tab1:
                     f"{custom_para1}\n\n"
                     f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
                     f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
-                    f"which is complemented by my peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
-                    f"Given the close alignment between your lab’s work and my background in geospatial data and spatial analysis, I am very keen to contribute to your ongoing research initiatives.\n\n"
+                    f"complemented by a peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
+                    f"{value_statement}\n\n"
                     f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
                     f"I have attached my CV for your review. Thank you very much for your time and guidance.\n\n\n"
                     f"Best Regards,\n"
