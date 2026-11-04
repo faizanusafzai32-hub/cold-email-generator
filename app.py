@@ -47,7 +47,8 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Smooth, hyphen-connected professional academic opening with proper dashed connectors.
+    Grammatically correct professional opening featuring proper dashed connectors 
+    between broad research areas and exact paper titles (Option 1).
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
@@ -64,7 +65,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     if has_exp and has_pub:
         return (
             f"While reviewing your work in {clean_exp}—"
-            f"particularly your publications on {clean_pub}—"
+            f"particularly your papers, {clean_pub}—"
             f"I found your research focus particularly insightful. "
             f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
@@ -76,7 +77,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
     elif has_pub:
         return (
-            f"While reviewing your publications on {clean_pub}, "
+            f"While reviewing your papers, {clean_pub}, "
             f"I found your research focus particularly insightful. "
             f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
@@ -121,7 +122,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
