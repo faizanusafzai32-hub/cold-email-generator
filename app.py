@@ -47,7 +47,7 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Smooth, hyphen-connected professional academic opening compliant with Pretha's rules.
+    Smooth, hyphen-connected professional academic opening with proper dashed connectors.
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
@@ -121,7 +121,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
