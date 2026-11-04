@@ -47,7 +47,7 @@ def clean_input_label(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Clean conversational opening with single paper mention and no repeated conclusion line.
+    Non-repetitive conversational opening with single mention of expertise and publication.
     """
     clean_exp = clean_input_label(expertise)
     clean_pub = clean_input_label(pub_ref)
@@ -55,28 +55,26 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     has_exp = bool(clean_exp and len(clean_exp) > 2)
     has_pub = bool(clean_pub and len(clean_pub) > 3)
     
-    focus_phrase = clean_exp if has_exp else "spatial data science and analytics"
-    
     if has_exp and has_pub:
         return (
             f"While reviewing your work in {clean_exp}—"
             f"particularly your publications on \"{clean_pub}\"—"
-            f"I found your focus on {focus_phrase} particularly insightful."
+            f"I found your research focus particularly insightful."
         )
     elif has_exp:
         return (
             f"While reviewing your work in {clean_exp}, "
-            f"I found your focus on {focus_phrase} particularly insightful."
+            f"I found your research focus particularly insightful."
         )
     elif has_pub:
         return (
             f"While reviewing your publications on \"{clean_pub}\", "
-            f"I found your focus on spatial analytics and modeling particularly insightful."
+            f"I found your research focus particularly insightful."
         )
     else:
         return (
             f"While reviewing your work in spatial data science and analytics, "
-            f"I found your focus on spatial patterns and environmental modeling particularly insightful."
+            f"I found your research focus particularly insightful."
         )
 
 def parse_raw_professor_blocks(raw_text):
