@@ -37,44 +37,59 @@ def clean_pdf_text(text):
                    .replace('\u2013', '-'))
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
-def clean_input_label(text):
-    """Strips stiff artificial headers like 'Latest Published Papers:' or 'Ongoing Project:' from raw text."""
+def clean_raw_labels(text):
+    """
+    Strips out any leftover 'Latest Published Papers:', 'Recent Publications:', 
+    or artificial text markers that corrupt the natural flow.
+    """
     if not text:
         return ""
-    pattern = r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*'
+    # Strip common label prefixes
+    pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project)\s*:\s*'
     cleaned = re.sub(pattern, '', text.strip(), flags=re.IGNORECASE)
     return cleaned.strip()
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Non-repetitive conversational opening with single mention of expertise and publication.
+    Generates 100% Pretha-compliant, natural, human academic openings with ZERO template smell.
     """
-    clean_exp = clean_input_label(expertise)
-    clean_pub = clean_input_label(pub_ref)
+    clean_exp = clean_raw_labels(expertise)
+    clean_pub = clean_raw_labels(pub_ref)
     
+    # If raw input had pub embedded inside expertise field, extract it clean
+    if "Latest Published Papers:" in clean_exp:
+        parts = re.split(r'Latest Published Papers:\s*', clean_exp, flags=re.IGNORECASE)
+        clean_exp = parts[0].strip().rstrip(',')
+        if len(parts) > 1 and not clean_pub:
+            clean_pub = parts[1].strip()
+
     has_exp = bool(clean_exp and len(clean_exp) > 2)
     has_pub = bool(clean_pub and len(clean_pub) > 3)
-    
+
     if has_exp and has_pub:
         return (
             f"While reviewing your work in {clean_exp}—"
-            f"particularly your publications on \"{clean_pub}\"—"
-            f"I found your research focus particularly insightful."
+            f"particularly your research on {clean_pub}—"
+            f"I was deeply impressed by your analytical approach. "
+            f"My own background in geospatial analytics and spatial modeling strongly aligns with evaluating these complex spatial dynamics."
         )
     elif has_exp:
         return (
             f"While reviewing your work in {clean_exp}, "
-            f"I found your research focus particularly insightful."
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
     elif has_pub:
         return (
-            f"While reviewing your publications on \"{clean_pub}\", "
-            f"I found your research focus particularly insightful."
+            f"While reviewing your research on {clean_pub}, "
+            f"I found your methodologies and spatial frameworks exceptionally rigorous. "
+            f"My technical background in geospatial workflows closely mirrors these research objectives."
         )
     else:
         return (
-            f"While reviewing your work in spatial data science and analytics, "
-            f"I found your research focus particularly insightful."
+            f"While reviewing your research group's contributions to spatial data science, "
+            f"I found your application of spatial modeling particularly inspiring. "
+            f"My core expertise in handling spatial databases and automated workflows directly complements your research direction."
         )
 
 def parse_raw_professor_blocks(raw_text):
@@ -111,7 +126,7 @@ def parse_raw_professor_blocks(raw_text):
                 prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -159,7 +174,7 @@ def get_tailored_statement_content(prof_name, focus_domain):
 # ==================== TAB 1 ====================
 with tab1:
     st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
-    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain. Startup box bilkul khali hai:")
+    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain:")
 
     pasted_data = st.text_area("📋 Paste Multiple Professors Raw Data Here (Up to 20+):", height=280, value="")
 
@@ -176,8 +191,8 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Clean Subject Keyword (Max 2-4 words)
-                raw_focus = clean_input_label(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
+                # Option 2 Concise Subject Format (Max 2-4 words)
+                raw_focus = clean_raw_labels(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
                 words = raw_focus.split()
                 concise_keyword = " ".join(words[:3]) if len(words) > 3 else raw_focus
                 
