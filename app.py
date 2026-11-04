@@ -47,8 +47,7 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Grammatically correct professional opening featuring proper dashed connectors 
-    between broad research areas and exact paper titles (Option 1).
+    Grammatically correct professional opening featuring the exact connector —particularly your work on...
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
@@ -64,8 +63,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
 
     if has_exp and has_pub:
         return (
-            f"While reviewing your work in {clean_exp}—"
-            f"particularly your papers, {clean_pub}—"
+            f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
             f"I found your research focus particularly insightful. "
             f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
@@ -77,7 +75,7 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
         )
     elif has_pub:
         return (
-            f"While reviewing your papers, {clean_pub}, "
+            f"While reviewing your work on {clean_pub}, "
             f"I found your research focus particularly insightful. "
             f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
         )
