@@ -39,7 +39,7 @@ def clean_pdf_text(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Updated paragraph replacing old labels with ', especially your recent work' and studies mapping.
+    Short, crisp, and direct opening matching your professional preference.
     """
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
@@ -100,13 +100,13 @@ def parse_raw_professor_blocks(raw_text):
                 prof['email'] = re.sub(r'^(?:Email Address|Email)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
                 current_key = 'expertise'
-                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
                 current_key = 'pub_ref'
-                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:', '', line_str, flags=re.IGNORECASE).strip()
             else:
                 if current_key and current_key in prof:
                     if prof[current_key]:
@@ -171,11 +171,19 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Subject strictly uses ONLY research focus, completely clean of papers/projects
-                raw_focus = prof['expertise'] if prof['expertise'] else "Remote Sensing & Spatial Analytics"
+                # Extracting a concise 2-4 word Core Research Keyword for Option 2 format
+                raw_focus = prof['expertise'] if prof['expertise'] else "Spatial Analytics"
                 clean_focus = re.split(r'Latest Published|Ongoing Project|Paper:', raw_focus, flags=re.IGNORECASE)[0].strip()
                 
-                subject = f"Prospective Ph.D. Applicant — {clean_focus} - Faizan Ahmad"
+                # Keep keyword concise (max 4 words)
+                words = clean_focus.split()
+                if len(words) > 3:
+                    concise_keyword = " ".join(words[:3])
+                else:
+                    concise_keyword = clean_focus
+                
+                # Option 2 Subject Format
+                subject = f"Prospective Ph.D. Student – {concise_keyword} | M.Sc. Remote Sensing & GIS"
                 
                 custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 
@@ -232,12 +240,8 @@ with tab2:
             cleaned_subjects = []
             for sub in df_uploaded.get("Email Subject", []):
                 sub_str = str(sub)
-                if "—" in sub_str:
-                    parts = sub_str.split("—")
-                    prefix = parts[0].strip()
-                    core = parts[1].strip()
-                    core_clean = re.split(r'Latest Published|Ongoing Project|Paper:', core, flags=re.IGNORECASE)[0].strip()
-                    cleaned_subjects.append(f"{prefix} — {core_clean}")
+                if "Student" in sub_str or "Prospective" in sub_str:
+                    cleaned_subjects.append(sub_str)
                 else:
                     cleaned_subjects.append(sub_str)
             df_uploaded["Email Subject"] = cleaned_subjects
@@ -254,12 +258,12 @@ with tab2:
                         subject = clean_pdf_text(str(row.get("Email Subject", "")))
                         
                         focus = "Remote Sensing & Spatial Analytics"
-                        if "—" in subject and "-" in subject:
-                            focus = subject.split("—")[1].split("-")[0].strip()
-                        elif "-" in subject:
-                            parts = subject.split("-")
+                        if "–" in subject and "|" in subject:
+                            parts = subject.split("–")
                             if len(parts) >= 2:
-                                focus = parts[0].replace("Prospective Ph.D. Applicant", "").replace(":", "").strip()
+                                focus = parts[1].split("|")[0].strip()
+                        elif "—" in subject:
+                            focus = subject.split("—")[1].split("-")[0].strip()
                                 
                         sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
                         
