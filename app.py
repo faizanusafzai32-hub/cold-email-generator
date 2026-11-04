@@ -39,8 +39,7 @@ def clean_pdf_text(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Expert Ph.D. Admissions Advisor format: Natural, conversational, tailored,
-    completely avoiding robotic labels, avoiding word repetition, and bridging to spatial modeling.
+    Updated to match your exact preferred natural, fluent, and professional style.
     """
     has_exp = bool(expertise and len(expertise.strip()) > 2)
     has_pub = bool(pub_ref and len(pub_ref.strip()) > 3)
@@ -50,24 +49,28 @@ def generate_dynamic_email_paragraph1(expertise, pub_ref):
     
     if has_exp and has_pub:
         return (
-            f"I have been following your research in {exp_text}, "
-            f"notably your work examining themes such as \"{pub_text}\". "
-            f"Your insights into environmental risks and spatial patterns closely mirror the questions I explore in my spatial modeling work."
+            f"While reviewing your work in {exp_text}—"
+            f"particularly your studies on {pub_text}—"
+            f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
     elif has_exp:
         return (
-            f"I have been following your research in {exp_text}. "
-            f"Your insights into environmental risks and spatial dynamics closely mirror the questions I explore in my geospatial analytics work."
+            f"While reviewing your work in {exp_text}, "
+            f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
     elif has_pub:
         return (
-            f"I have been following your recent studies, notably your work examining themes such as \"{pub_text}\". "
-            f"Your insights into environmental risks and spatial patterns closely mirror the questions I explore in my spatial modeling work."
+            f"While reviewing your studies on {pub_text}, "
+            f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
     else:
         return (
-            f"I have been following your research group's contributions to spatial data science. "
-            f"Your insights into environmental risks and spatial dynamics closely mirror the questions I explore in my geospatial analytics work."
+            f"While reviewing your work in spatial data science and analytics, "
+            f"I found your focus on modeling spatiotemporal environmental risks particularly insightful. "
+            f"I have been exploring similar spatial modeling questions in my own research."
         )
 
 def parse_raw_professor_blocks(raw_text):
