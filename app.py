@@ -38,7 +38,7 @@ def clean_pdf_text(text):
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
 def clean_raw_labels(text):
-    """Strips out any leftover 'Latest Published Papers:' or artificial markers."""
+    """Strips out any leftover headers or artificial markers."""
     if not text:
         return ""
     pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project)\s*:\s*'
@@ -47,21 +47,27 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Strictly forces the exact dashed connector for all professors.
+    Ensures the exact dashed connector —particularly your work on— wraps the papers correctly.
     """
     clean_exp = clean_raw_labels(expertise)
     clean_pub = clean_raw_labels(pub_ref)
     
+    # Fallback if expertise is empty
     if not clean_exp:
         clean_exp = "spatial data science and analytics"
-    if not clean_pub:
-        clean_pub = "spatiotemporal patterns and spatial modeling"
 
-    return (
-        f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
-        f"I found your research focus particularly insightful. "
-        f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-    )
+    if clean_pub:
+        return (
+            f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
+        )
+    else:
+        return (
+            f"While reviewing your work in {clean_exp}, "
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
+        )
 
 def parse_raw_professor_blocks(raw_text):
     professors = []
@@ -92,9 +98,9 @@ def parse_raw_professor_blocks(raw_text):
             elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
                 current_key = 'expertise'
                 prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
+            elif re.match(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
                 current_key = 'pub_ref'
-                prof['pub_ref'] = re.sub(r'^(?:Latest Published Paper 1|Latest Published Paper|Key Publication|Publication|Paper|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
                 prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
@@ -105,6 +111,13 @@ def parse_raw_professor_blocks(raw_text):
                     else:
                         prof[current_key] = line_str
                         
+        # Fallback inline check if papers are written right after expertise on the same line
+        if not prof['pub_ref'] and "Latest Published Papers:" in prof['expertise']:
+            parts = re.split(r'Latest Published Papers:\s*', prof['expertise'], flags=re.IGNORECASE)
+            prof['expertise'] = parts[0].strip().rstrip(',')
+            if len(parts) > 1:
+                prof['pub_ref'] = parts[1].strip()
+
         if not prof['email']:
             em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
             if em_search:
