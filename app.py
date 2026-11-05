@@ -138,7 +138,7 @@ def parse_professors_input(raw_text):
             elif re.match(r'^(?:Paper Title|Latest Published Papers|Latest Published Paper|Paper)\s*:', l, re.IGNORECASE):
                 p['paper_title'] = re.sub(r'^(?:Paper Title|Latest Published Papers|Latest Published Paper|Paper)\s*:\s*', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Year|Paper Year)\s*:', l, re.IGNORECASE):
-                p['paper_journal_year'] = re.sub(r'^(?:Year|Paper Year)\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+                p['paper_journal_year'] = re.sub(r'^(?:Year|Paper Year)\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^Abstract\s*:', l, re.IGNORECASE):
                 p['paper_abstract'] = re.sub(r'^Abstract\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Connection Note|Connection)\s*:', l, re.IGNORECASE):
@@ -171,52 +171,55 @@ Email: linke@geog.utah.edu"""
     pasted_data = st.text_area("📋 Paste Professor Data Here:", height=260, value=sample_input)
 
     if st.button("🚀 Generate Clean Emails & Excel"):
-        profs = parse_professors_input(pasted_data)
-        if not profs:
-            st.error("Could not parse professor records. Please check format.")
-        else:
-            st.success(f"Successfully processed {len(profs)} professor record(s)!")
-            
-            rows = []
-            for prof in profs:
-                subj, bdy, chk = generate_strict_cold_email(
-                    prof.get('name', ''),
-                    prof.get('university', ''),
-                    prof.get('program', ''),
-                    prof.get('research_summary', ''),
-                    prof.get('paper_title', ''),
-                    prof.get('paper_journal_year', ''),
-                    prof.get('paper_abstract', ''),
-                    prof.get('connection_note', '')
-                )
+        try:
+            profs = parse_professors_input(pasted_data)
+            if not profs:
+                st.error("Could not parse professor records. Please check format.")
+            else:
+                st.success(f"Successfully processed {len(profs)} professor record(s)!")
                 
-                rows.append({
-                    "Name": prof.get('name'),
-                    "Email Address": prof.get('email', ''),
-                    "Email Subject": clean_pdf_text(subj),
-                    "Email Body": clean_pdf_text(bdy),
-                    "Checklist Notes": "; ".join(chk)
-                })
-                
-                with st.expander(f"Email Preview: {prof.get('name', 'Professor')} ({prof.get('university', '')})"):
-                    st.write(f"**Subject:** {subj}")
-                    st.text(bdy)
-                    st.write("**Checklist (Internal Notes):**")
-                    for item in chk:
-                        st.write(f"- {item}")
+                rows = []
+                for prof in profs:
+                    subj, bdy, chk = generate_strict_cold_email(
+                        prof.get('name', ''),
+                        prof.get('university', ''),
+                        prof.get('program', ''),
+                        prof.get('research_summary', ''),
+                        prof.get('paper_title', ''),
+                        prof.get('paper_journal_year', ''),
+                        prof.get('paper_abstract', ''),
+                        prof.get('connection_note', '')
+                    )
+                    
+                    rows.append({
+                        "Name": prof.get('name'),
+                        "Email Address": prof.get('email', ''),
+                        "Email Subject": clean_pdf_text(subj),
+                        "Email Body": clean_pdf_text(bdy),
+                        "Checklist Notes": "; ".join(chk)
+                    })
+                    
+                    with st.expander(f"Email Preview: {prof.get('name', 'Professor')} ({prof.get('university', '')})"):
+                        st.write(f"**Subject:** {subj}")
+                        st.text(bdy)
+                        st.write("**Checklist (Internal Notes):**")
+                        for item in chk:
+                            st.write(f"- {item}")
 
-            df = pd.DataFrame(rows)
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name="Clean_Emails")
-            buffer.seek(0)
-            
-            st.download_button(
-                label="📥 Download Clean_Emails.xlsx",
-                data=buffer,
-                file_name="Clean_Emails.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+                df = pd.DataFrame(rows)
+                buffer = io.BytesIO()
+                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                    df.to_excel(writer, index=False, sheet_name="Clean_Emails")
+                buffer.seek(0)
+                
+                st.download_button(
+                    label="📥 Download Clean_Emails.xlsx",
+                    data=buffer,
+                    file_name="Clean_Emails.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+        except Exception as e:
+            st.error(f"Error: {e}")
 
 # ==================== TAB 2 ====================
 with tab2:
