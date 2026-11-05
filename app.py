@@ -41,30 +41,33 @@ def clean_raw_labels(text):
     """Strips out any leftover headers or artificial markers."""
     if not text:
         return ""
-    pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project|Specific Technical Finding / Methodology|Methodology|Finding)\s*:\s*'
+    pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project)\s*:\s*'
     cleaned = re.sub(pattern, '', text.strip(), flags=re.IGNORECASE)
     return cleaned.strip()
 
-def generate_dynamic_email_paragraph1(expertise, paper_title, paper_year, specific_finding):
+def generate_dynamic_email_paragraph1(expertise, pub_ref):
     """
-    Generates EXACTLY ONE 2-sentence paragraph matching the new requested structure:
-    - Sentence 1: "Your [Year] paper "[Paper Title]" interested me because you [insert specific finding/methodology used]."
-    - Sentence 2: "I work with multi-temporal satellite imagery and GIS-based land surface dynamics, and I would like to learn how [methodology from paper] are combined with spatial time-series data for long-term environmental monitoring."
+    Ensures the exact dashed connector —particularly your work on— wraps the papers correctly.
     """
-    clean_title = clean_raw_labels(paper_title)
-    clean_finding = clean_raw_labels(specific_finding)
-    year_str = str(paper_year).strip() if paper_year else "recent"
+    clean_exp = clean_raw_labels(expertise)
+    clean_pub = clean_raw_labels(pub_ref)
+    
+    # Fallback if expertise is empty
+    if not clean_exp:
+        clean_exp = "spatial data science and analytics"
 
-    # Fallback default values if fields are empty
-    if not clean_title:
-        clean_title = "spatiotemporal analysis and modeling"
-    if not clean_finding:
-        clean_finding = "applied advanced spatial modeling techniques"
-
-    sentence1 = f'Your {year_str} paper "{clean_title}" interested me because you {clean_finding}.'
-    sentence2 = f'I work with multi-temporal satellite imagery and GIS-based land surface dynamics, and I would like to learn how {clean_finding} are combined with spatial time-series data for long-term environmental monitoring.'
-
-    return f"{sentence1} {sentence2}"
+    if clean_pub:
+        return (
+            f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
+        )
+    else:
+        return (
+            f"While reviewing your work in {clean_exp}, "
+            f"I found your research focus particularly insightful. "
+            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
+        )
 
 def parse_raw_professor_blocks(raw_text):
     professors = []
@@ -77,16 +80,7 @@ def parse_raw_professor_blocks(raw_text):
         if not block.strip():
             continue
             
-        prof = {
-            "name": "", 
-            "email": "", 
-            "institution": "",
-            "expertise": "", 
-            "paper_title": "", 
-            "paper_year": "",
-            "specific_finding": "",
-            "bio": ""
-        }
+        prof = {"name": "", "email": "", "expertise": "", "pub_ref": "", "bio": ""}
         lines = block.split('\n')
         current_key = None
         
@@ -101,29 +95,12 @@ def parse_raw_professor_blocks(raw_text):
             elif re.match(r'^(?:Email Address|Email)\s*:', line_str, re.IGNORECASE):
                 current_key = 'email'
                 prof['email'] = re.sub(r'^(?:Email Address|Email)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Department / Institution|Institution|University|Department)\s*:', line_str, re.IGNORECASE):
-                current_key = 'institution'
-                prof['institution'] = re.sub(r'^(?:Department / Institution|Institution|University|Department)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Research Interests areas or expertise|Professor\'s Research Interests|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
+            elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
                 current_key = 'expertise'
-                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Professor\'s Research Interests|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Paper Title & Year|Paper Title|Latest Published Papers|Key Publication|Publication|Paper)\s*:', line_str, re.IGNORECASE):
-                current_key = 'paper_title'
-                raw_val = re.sub(r'^(?:Paper Title & Year|Paper Title|Latest Published Papers|Key Publication|Publication|Paper)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-                
-                year_match = re.search(r'\((\d{4})\)', raw_val)
-                if year_match:
-                    prof['paper_year'] = year_match.group(1)
-                    prof['paper_title'] = raw_val.replace(year_match.group(0), '').strip()
-                else:
-                    prof['paper_title'] = raw_val
-
-            elif re.match(r'^(?:Paper Year|Year)\s*:', line_str, re.IGNORECASE):
-                current_key = 'paper_year'
-                prof['paper_year'] = re.sub(r'^(?:Paper Year|Year)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Specific Technical Finding / Methodology|Methodology|Specific Finding|Finding)\s*:', line_str, re.IGNORECASE):
-                current_key = 'specific_finding'
-                prof['specific_finding'] = re.sub(r'^(?:Specific Technical Finding / Methodology|Methodology|Specific Finding|Finding)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
+            elif re.match(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
+                current_key = 'pub_ref'
+                prof['pub_ref'] = re.sub(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
                 current_key = 'bio'
                 prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
@@ -133,6 +110,13 @@ def parse_raw_professor_blocks(raw_text):
                         prof[current_key] += " " + line_str
                     else:
                         prof[current_key] = line_str
+                        
+        # Fallback inline check if papers are written right after expertise on the same line
+        if not prof['pub_ref'] and "Latest Published Papers:" in prof['expertise']:
+            parts = re.split(r'Latest Published Papers:\s*', prof['expertise'], flags=re.IGNORECASE)
+            prof['expertise'] = parts[0].strip().rstrip(',')
+            if len(parts) > 1:
+                prof['pub_ref'] = parts[1].strip()
 
         if not prof['email']:
             em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
@@ -191,18 +175,14 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
+                # Option 2 Concise Subject Format (Max 2-4 words)
                 raw_focus = clean_raw_labels(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
                 words = raw_focus.split()
                 concise_keyword = " ".join(words[:3]) if len(words) > 3 else raw_focus
                 
                 subject = f"Prospective Ph.D. Student – {concise_keyword} | M.Sc. Remote Sensing & GIS"
                 
-                custom_para1 = generate_dynamic_email_paragraph1(
-                    prof['expertise'], 
-                    prof['paper_title'], 
-                    prof['paper_year'], 
-                    prof['specific_finding']
-                )
+                custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
                 value_statement = "Given the close alignment between your lab's work and my background, I am very keen to contribute to your ongoing research initiatives."
                 
                 email_body = (
@@ -311,7 +291,7 @@ with tab2:
                         # Section 2: Unique Domain Alignment
                         pdf.set_font("Helvetica", style="B", size=10)
                         pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '').replace('Prof. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", style="B", size=9)
+                        pdf.set_font("Helvetica", size=9)
                         pdf.multi_cell(0, 3.8, sec2_text)
                         pdf.ln(2)
                         
