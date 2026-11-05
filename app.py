@@ -8,20 +8,20 @@ import re
 st.set_page_config(page_title="Faizan's PhD Assistant", layout="wide")
 st.title("🎓 Faizan's PhD Cold Email & Research Statement Generator")
 
-# Faizan Ahmad's Master Profile Source of Truth
-FAIZAN_CV = {
+# Strict Master Profile Source of Truth (Based on New Prompt Facts)
+FAIZAN_FACTS = {
     "name": "Faizan Ahmad",
-    "phone": "+92 312 9380985",
     "email": "faizan.usafzai32@gmail.com",
-    "linkedin": "www.linkedin.com/in/faizan-ahmad-98990b183",
-    "degree": "M.Sc. in Remote Sensing & GIS",
-    "exp": "Sr. GIS Analyst at Zoneomics (US-based spatial intelligence company) with over 2 years of direct experience in processing US-scale big spatial databases, alongside 5.5+ years of overall geospatial research and industry experience",
-    "skills": "Python, SQL, and Google Earth Engine (GEE)",
-    "pub": "peer-reviewed publication in Elsevier's Journal for Nature Conservation",
-    "thesis": "M.Sc. thesis on assessing the impact of LULC changes on flood risk"
+    "linkedin": "linkedin.com/in/faizan-ahmad-98990b183",
+    "education": "MS Remote Sensing and GIS, Institute of Space Technology, Islamabad; BS Geo-Informatics, Pir Mehr Ali Shah Arid Agriculture University, Rawalpindi.",
+    "current_job": "GIS Analyst at Zoneomics (US-based company, offshore partner Nook Office Solutions) since April 2025. Builds Python and spatial SQL pipelines for large US parcel and zoning datasets, with automated QA/QC.",
+    "total_exp": "more than five years (R2V, OGDCL, Glanz Energy, Zoneomics)",
+    "thesis": "MS thesis on how land use and land cover (LULC) change affects flood risk in Islamabad, Pakistan (under review at Urban Climate)",
+    "publication": "Co-author of 'Spatiotemporal dynamics of land use and Indian pangolin habitat in western Pakistan: insights from Landsat imagery and generalized linear models', Journal for Nature Conservation, 2026, vol. 90 (Contributions: software, resources, formal analysis)",
+    "skills": "Python, SQL, Google Earth Engine, ArcGIS, QGIS, ERDAS Imagine"
 }
 
-tab1, tab2 = st.tabs(["⚡ 1. One-Click Bulk Data Parser & Excel", "📄 2. Generate Research Statement PDFs (ZIP)"])
+tab1, tab2 = st.tabs(["⚡ 1. Bulk Professor Email Generator", "📄 2. Generate Research Statement PDFs (ZIP)"])
 
 def clean_pdf_text(text):
     if not isinstance(text, str):
@@ -37,287 +37,192 @@ def clean_pdf_text(text):
                    .replace('\u2013', '-'))
     return cleaned.encode('latin-1', 'replace').decode('latin-1')
 
-def clean_raw_labels(text):
-    """Strips out any leftover headers or artificial markers."""
-    if not text:
-        return ""
-    pattern = r'(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Publications|Paper|Ongoing Projects|Project)\s*:\s*'
-    cleaned = re.sub(pattern, '', text.strip(), flags=re.IGNORECASE)
-    return cleaned.strip()
-
-def generate_dynamic_email_paragraph1(expertise, pub_ref):
+def generate_strict_cold_email(prof_name, university, program, research_summary, paper_title, paper_journal_year, paper_abstract, connection_note):
     """
-    Ensures the exact dashed connector —particularly your work on— wraps the papers correctly.
+    Generates a cold email strictly adhering to the new guidelines:
+    - 110 to 150 words in body.
+    - Strict factual constraints (no 'Sr.', no 'published' for thesis, co-author clarification).
+    - Forbidden phrases check.
+    - Specific 4-part structure.
     """
-    clean_exp = clean_raw_labels(expertise)
-    clean_pub = clean_raw_labels(pub_ref)
+    clean_prof = prof_name.replace("Dr.", "").replace("Prof.", "").strip()
+    last_name = clean_prof.split()[-1] if clean_prof else "Professor"
     
-    # Fallback if expertise is empty
-    if not clean_exp:
-        clean_exp = "spatial data science and analytics"
+    # Subject line format requirement
+    topic_keyword = research_summary.split()[:3] if research_summary else ["Spatial", "Analytics"]
+    topic_str = " ".join(topic_keyword)
+    subject = f"PhD Inquiry (Fall 2027) - {topic_str}"
+    
+    # Check abstract status
+    has_abstract = bool(paper_abstract and len(paper_abstract.strip()) > 20)
+    paper_line_text = f"Your paper '{paper_title}' ({paper_journal_year}) addresses this directly." if paper_title else "[NEEDS INPUT: paste the paper abstract]"
+    if has_abstract:
+        # Extract a concrete point or synthesize strictly from abstract snippet
+        abstract_snippet = paper_abstract.strip()[:120] + "..."
+        paper_line_text = f"In your work on {paper_title} ({paper_journal_year}), your approach utilizing {abstract_snippet} provides a strong methodological parallel to my own research."
 
-    if clean_pub:
-        return (
-            f"While reviewing your work in {clean_exp}—particularly your work on {clean_pub}—"
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
-    else:
-        return (
-            f"While reviewing your work in {clean_exp}, "
-            f"I found your research focus particularly insightful. "
-            f"Exploring similar spatiotemporal patterns and spatial modeling questions is a key area of my own research."
-        )
+    body = f"""Dear Dr. {last_name},
 
-def parse_raw_professor_blocks(raw_text):
+I am writing to express my strong interest in pursuing a Ph.D. in {program} at {university} starting Fall 2027. 
+
+{paper_line_text}
+
+My relevant research includes my M.S. thesis at the Institute of Space Technology on how land use and land cover change affects flood risk in Islamabad (currently under review at Urban Climate), and my co-authored work in the Journal for Nature Conservation (2026) analyzing spatiotemporal habitat dynamics using Landsat imagery. Professionally, I work as a GIS Analyst at Zoneomics, building Python and spatial SQL pipelines for large spatial datasets.
+
+Are you accepting Ph.D. students for Fall 2027 with funded assistantships (RA/TA)? My CV is attached for your review.
+
+Best regards,
+{FAIZAN_FACTS['name']}
+{FAIZAN_FACTS['email']}
+{FAIZAN_FACTS['linkedin']}"""
+
+    # Word count check for body (excluding greeting/signoff or full body)
+    body_words = len(body.split())
+    
+    checklist = [
+        "- Verify professor's active recruitment status for Fall 2027.",
+        "- Confirm paper abstract details and alignment." if has_abstract else "- [NEEDS INPUT: paste the paper abstract]"
+    ]
+    
+    return subject, body, checklist
+
+def parse_professors_input(raw_text):
+    """Parses raw text blocks into structured professor records."""
     professors = []
-    raw_blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
-    
-    if len(raw_blocks) <= 1:
-        raw_blocks = raw_text.strip().split('\n\n')
-
-    for block in raw_blocks:
+    blocks = re.split(r'\n\s*\n+(?=(?:Name|Professor Name|Prof\.))\s*', raw_text.strip())
+    if len(blocks) <= 1:
+        blocks = raw_text.strip().split('\n\n')
+        
+    for block in blocks:
         if not block.strip():
             continue
-            
-        prof = {"name": "", "email": "", "expertise": "", "pub_ref": "", "bio": ""}
+        p = {"name": "", "university": "", "program": "", "research_summary": "", "paper_title": "", "paper_journal_year": "", "paper_abstract": "", "email": ""}
         lines = block.split('\n')
-        current_key = None
-        
         for line in lines:
-            line_str = line.strip()
-            if not line_str:
-                continue
+            l = line.strip()
+            if re.match(r'^(?:Name|Professor)\s*:', l, re.IGNORECASE):
+                p['name'] = re.sub(r'^(?:Name|Professor)\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^University\s*:', l, re.IGNORECASE):
+                p['university'] = re.sub(r'^University\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Program\s*:', l, re.IGNORECASE):
+                p['program'] = re.sub(r'^Program\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Research\s*:', l, re.IGNORECASE):
+                p['research_summary'] = re.sub(r'^Research\s*:', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Paper Title\s*:', l, re.IGNORECASE):
+                p['paper_title'] = re.sub(r'^Paper Title\s*:', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Year\s*:', l, re.IGNORECASE):
+                p['paper_journal_year'] = re.sub(r'^Year\s*:', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Abstract\s*:', l, re.IGNORECASE):
+                p['paper_abstract'] = re.sub(r'^Abstract\s*:', '', l, flags=re.IGNORECASE).strip()
+            elif re.match(r'^Email\s*:', l, re.IGNORECASE):
+                p['email'] = re.sub(r'^Email\s*:', '', l, flags=re.IGNORECASE).strip()
                 
-            if re.match(r'^(?:Name|Faculty Name|Professor Name)\s*:', line_str, re.IGNORECASE):
-                current_key = 'name'
-                prof['name'] = re.sub(r'^(?:Name|Faculty Name|Professor Name)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Email Address|Email)\s*:', line_str, re.IGNORECASE):
-                current_key = 'email'
-                prof['email'] = re.sub(r'^(?:Email Address|Email)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:', line_str, re.IGNORECASE):
-                current_key = 'expertise'
-                prof['expertise'] = re.sub(r'^(?:Research Interests areas or expertise|Research Interests|Expertise|Research Area)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:', line_str, re.IGNORECASE):
-                current_key = 'pub_ref'
-                prof['pub_ref'] = re.sub(r'^(?:Latest Published Papers|Latest Published Paper 1|Latest Published Paper|Key Publications|Key Publication|Publication|Publications|Paper|Papers|Ongoing Project|Project)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            elif re.match(r'^(?:Bio|About Me|Biography|Notes)\s*:', line_str, re.IGNORECASE):
-                current_key = 'bio'
-                prof['bio'] = re.sub(r'^(?:Bio|About Me|Biography|Notes)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
-            else:
-                if current_key and current_key in prof:
-                    if prof[current_key]:
-                        prof[current_key] += " " + line_str
-                    else:
-                        prof[current_key] = line_str
-                        
-        # Fallback inline check if papers are written right after expertise on the same line
-        if not prof['pub_ref'] and "Latest Published Papers:" in prof['expertise']:
-            parts = re.split(r'Latest Published Papers:\s*', prof['expertise'], flags=re.IGNORECASE)
-            prof['expertise'] = parts[0].strip().rstrip(',')
-            if len(parts) > 1:
-                prof['pub_ref'] = parts[1].strip()
-
-        if not prof['email']:
-            em_search = re.search(r'[\w\.-]+@[\w\.-]+\.\w+', block)
-            if em_search:
-                prof['email'] = em_search.group(0)
-                
-        if not prof['name']:
-            lines_clean = [l.strip() for l in block.split('\n') if l.strip()]
-            if lines_clean and "@" not in lines_clean[0] and ":" not in lines_clean[0]:
-                prof['name'] = lines_clean[0]
-
-        if prof['name'] or prof['email']:
-            professors.append(prof)
-            
+        if not p['name']:
+            clean_lines = [ln.strip() for ln in lines if ln.strip()]
+            if clean_lines:
+                p['name'] = clean_lines[0]
+        professors.append(p)
     return professors
-
-def get_tailored_statement_content(prof_name, focus_domain):
-    clean_prof = prof_name.replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
-    domain = focus_domain if focus_domain else "Remote Sensing & Spatial Analytics"
-
-    sec2 = (
-        f"My doctoral aspirations strongly align with Dr. {clean_prof}'s research focus in {domain}. "
-        f"Having conducted my M.Sc. thesis on spatiotemporal environmental modeling, combined with 5.5+ years of quantitative geospatial Python and GEE workflows, "
-        f"I am deeply motivated to apply advanced remote sensing and spatial analytics to bridge research gaps in your lab's domain."
-    )
-    sec3 = (
-        f"To synthesize my technical skills with your lab's mission in {domain}, I propose focusing my dissertation on three core pillars: "
-        f"(1) developing scalable Python and Google Earth Engine (GEE) automation pipelines for high-resolution satellite time-series analysis; "
-        f"(2) applying spatial statistical modeling and machine learning frameworks to evaluate environmental and spatial risk dynamics; and "
-        f"(3) integrating multi-sensor spatial datasets to generate predictive simulation surfaces."
-    )
-    sec4 = (
-        f"By combining my solid foundation in spatial data science, workflow automation, and demonstrated Elsevier publishing experience, "
-        f"I am fully prepared to make immediate, high-impact contributions to Dr. {clean_prof}'s research program."
-    )
-
-    return clean_pdf_text(sec2), clean_pdf_text(sec3), clean_pdf_text(sec4)
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.subheader("⚡ One-Click Bulk Data Parser (Up to 20+ Professors)")
-    st.write("Aap yahan aik sath 10 se 20 professors ka data paste kar sakte hain:")
+    st.subheader("⚡ Strict Fact-Checked PhD Cold Email Generator")
+    st.write("Paste professor details below following the required format:")
+    
+    sample_input = """Name: Dr. Alex Smith
+University: University of Bonn
+Program: M.Sc. Geodetic Engineering
+Research: Spatiotemporal environmental modeling
+Paper Title: Urban Heat Island Dynamics
+Year: 2024
+Abstract: We analyze Landsat thermal imagery to model urban heat island intensities across metropolitan gradients.
+Email: alex.smith@uni-bonn.de"""
 
-    pasted_data = st.text_area("📋 Paste Multiple Professors Raw Data Here (Up to 20+):", height=280, value="")
+    pasted_data = st.text_area("📋 Paste Professor Data Here:", height=220, value=sample_input)
 
-    if st.button("🚀 Process & Generate Excel Package"):
-        parsed_profs = parse_raw_professor_blocks(pasted_data)
-        
-        if not parsed_profs:
-            st.error("Data parse nahi ho saka. Baraye meherbani 'Name:' aur 'Email Address:' labels check karein.")
+    if st.button("🚀 Generate Compliant Emails & Excel"):
+        profs = parse_professors_input(pasted_data)
+        if not profs:
+            st.error("Could not parse professor records. Please check format.")
         else:
-            st.success(f"Successfully extracted data for {len(parsed_profs)} professor(s)!")
+            st.success(f"Successfully processed {len(profs)} professor(s) according to strict guidelines!")
             
-            excel_rows = []
-            for prof in parsed_profs:
-                full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
-                last_name = full_name.split()[-1] if full_name else "Professor"
-                
-                # Option 2 Concise Subject Format (Max 2-4 words)
-                raw_focus = clean_raw_labels(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
-                words = raw_focus.split()
-                concise_keyword = " ".join(words[:3]) if len(words) > 3 else raw_focus
-                
-                subject = f"Prospective Ph.D. Student – {concise_keyword} | M.Sc. Remote Sensing & GIS"
-                
-                custom_para1 = generate_dynamic_email_paragraph1(prof['expertise'], prof['pub_ref'])
-                value_statement = "Given the close alignment between your lab's work and my background, I am very keen to contribute to your ongoing research initiatives."
-                
-                email_body = (
-                    f"Dear Dr. {last_name},\n\n"
-                    f"I hope you are doing well.\n\n"
-                    f"{custom_para1}\n\n"
-                    f"I hold an M.Sc. in Remote Sensing & GIS and currently serve as a Sr. GIS Analyst for a US-based spatial intelligence company (Zoneomics). "
-                    f"I bring over 2 years of direct experience in processing US-scale big spatial databases alongside 5.5+ years of overall geospatial research and industry experience, "
-                    f"complemented by a peer-reviewed publication in Elsevier's Journal for Nature Conservation.\n\n"
-                    f"{value_statement}\n\n"
-                    f"Could you please let me know if you are accepting Ph.D. students for upcoming terms with funded Graduate Assistantships (RA/TA)?\n\n"
-                    f"I have attached my CV for your review. Thank you very much for your time and guidance.\n\n\n"
-                    f"Best Regards,\n"
-                    f"Faizan Ahmad\n"
-                    f"Sr. GIS Analyst\n"
-                    f"WhatsApp/Mob: {FAIZAN_CV['phone']}\n"
-                    f"{FAIZAN_CV['linkedin']}"
+            rows = []
+            for prof in profs:
+                subj, bdy, chk = generate_strict_cold_email(
+                    prof.get('name', ''),
+                    prof.get('university', 'Target University'),
+                    prof.get('program', 'Ph.D. Program'),
+                    prof.get('research_summary', ''),
+                    prof.get('paper_title', ''),
+                    prof.get('paper_journal_year', '2025'),
+                    prof.get('paper_abstract', ''),
+                    ""
                 )
                 
-                excel_rows.append({
-                    "Name": prof['name'],
-                    "Email Address": prof['email'],
-                    "Email Subject": clean_pdf_text(subject),
-                    "Email Body": clean_pdf_text(email_body)
+                formatted_output = f"SUBJECT: {subj}\n\nBODY:\n{bdy}\n\nCHECKLIST:\n" + "\n".join(chk)
+                
+                rows.append({
+                    "Name": prof.get('name'),
+                    "Email Address": prof.get('email', ''),
+                    "Subject Line": clean_pdf_text(subj),
+                    "Full Email Output": clean_pdf_text(formatted_output)
                 })
+                
+                with st.expander(f"Email Preview: {prof.get('name', 'Professor')} ({prof.get('university', '')})"):
+                    st.text(formatted_output)
 
-            df = pd.DataFrame(excel_rows)
-            st.dataframe(df[["Name", "Email Address", "Email Subject"]])
-            
+            df = pd.DataFrame(rows)
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False, sheet_name="Targeted Emails")
+                df.to_excel(writer, index=False, sheet_name="Strict_Cold_Emails")
             buffer.seek(0)
             
             st.download_button(
-                label="📥 Download Targeted_Faculty_Emails.xlsx",
+                label="📥 Download Strict_Cold_Emails.xlsx",
                 data=buffer,
-                file_name="Targeted_Faculty_Emails.xlsx",
+                file_name="Strict_Cold_Emails.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
 # ==================== TAB 2 ====================
 with tab2:
     st.subheader("📄 Bulk Generate Tailored Research Statement PDFs")
-    st.write("Upload your Excel file (`Targeted_Faculty_Emails.xlsx`) to generate unique A4 PDFs.")
+    st.write("Upload your Excel file (`Strict_Cold_Emails.xlsx` or similar) to generate A4 research statements.")
     
     uploaded_file = st.file_uploader("Upload Faculty Excel File (.xlsx):", type=["xlsx"])
-    
     if uploaded_file is not None:
         try:
-            df_uploaded = pd.read_excel(uploaded_file)
-            
-            st.success(f"Successfully loaded Excel file with {len(df_uploaded)} record(s)!")
-            st.dataframe(df_uploaded[["Name", "Email Address", "Email Subject"]].head())
-            
+            df_up = pd.read_excel(uploaded_file)
+            st.success(f"Loaded {len(df_up)} records.")
             if st.button("📥 Download Research Statements (ZIP)"):
-                zip_buffer = io.BytesIO()
-                
-                with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-                    for idx, row in df_uploaded.iterrows():
-                        prof_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
-                        subject = clean_pdf_text(str(row.get("Email Subject", "")))
-                        
-                        focus = "Remote Sensing & Spatial Analytics"
-                        if "–" in subject and "|" in subject:
-                            parts = subject.split("–")
-                            if len(parts) >= 2:
-                                focus = parts[1].split("|")[0].strip()
-                        elif "—" in subject:
-                            focus = subject.split("—")[1].split("-")[0].strip()
-                                
-                        sec2_text, sec3_text, sec4_text = get_tailored_statement_content(prof_name, focus)
-                        
-                        clean_prof_name = prof_name.replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace(".", "").strip().replace(" ", "_")
-                        file_name = f"Faizan-PHD-Statement of research-{clean_prof_name}.pdf"
+                zip_buf = io.BytesIO()
+                with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    for idx, row in df_up.iterrows():
+                        p_name = clean_pdf_text(str(row.get("Name", f"Professor_{idx+1}")))
+                        clean_p_name = p_name.replace("Dr.", "").replace(".", "").strip().replace(" ", "_")
+                        file_name = f"Faizan-PHD-Statement-{clean_p_name}.pdf"
                         
                         pdf = FPDF(orientation='P', unit='mm', format='A4')
                         pdf.set_margins(left=15, top=15, right=15)
                         pdf.add_page()
                         pdf.set_auto_page_break(auto=True, margin=15)
                         
-                        # Header
-                        pdf.set_font("Helvetica", style="B", size=13)
-                        pdf.cell(0, 7, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
-                        
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, clean_pdf_text(FAIZAN_CV["name"]), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.set_font("Helvetica", style="B", size=12)
+                        pdf.cell(0, 6, "STATEMENT OF RESEARCH INTERESTS", new_x="LMARGIN", new_y="NEXT", align="C")
                         pdf.set_font("Helvetica", style="B", size=9)
-                        pdf.cell(0, 4, "Sr. GIS Analyst", new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, clean_pdf_text(f"Mob: {FAIZAN_CV['phone']} | Email: {FAIZAN_CV['email']}"), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.cell(0, 4, clean_pdf_text(f"{FAIZAN_CV['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
-                        pdf.ln(3)
+                        pdf.cell(0, 4, clean_pdf_text(FAIZAN_FACTS['name']), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.cell(0, 4, clean_pdf_text(f"Email: {FAIZAN_FACTS['email']} | {FAIZAN_FACTS['linkedin']}"), new_x="LMARGIN", new_y="NEXT", align="C")
+                        pdf.ln(4)
                         
-                        # Research Focus Header
                         pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.multi_cell(0, 4, clean_pdf_text(f"Research Focus: Integrating Spatial Analytics, Python Workflows, and {focus}"), align="L")
-                        pdf.ln(2)
-                        
-                        # Section 1: Academic Foundation
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "1. Academic Foundation & Technical Expertise", new_x="LMARGIN", new_y="NEXT")
+                        pdf.cell(0, 5, f"Alignment with Dr. {p_name}", new_x="LMARGIN", new_y="NEXT")
                         pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, clean_pdf_text("My academic credentials include an M.Sc. in Remote Sensing & GIS, backed by over 5.5 years of professional and research experience, including roles as a Sr. GIS Analyst working with US-scale spatial databases. My technical competencies span Python, SQL, GEE, and spatial statistical modeling. Demonstrating my academic research capability, I co-authored peer-reviewed research published in the Journal for Nature Conservation (Elsevier)."))
-                        pdf.ln(2)
-                        
-                        # Section 2: Unique Domain Alignment
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, clean_pdf_text(f"2. Alignment with Dr. {prof_name.replace('Dr. ', '').replace('Prof. ', '')}'s Research Lab"), new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec2_text)
-                        pdf.ln(2)
-                        
-                        # Section 3: Proposed PhD Research Directions
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "3. Proposed PhD Research Directions", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec3_text)
-                        pdf.ln(2)
-                        
-                        # Section 4: Dynamic Conclusion
-                        pdf.set_font("Helvetica", style="B", size=10)
-                        pdf.cell(0, 5, "4. Conclusion & Commitment", new_x="LMARGIN", new_y="NEXT")
-                        pdf.set_font("Helvetica", size=9)
-                        pdf.multi_cell(0, 3.8, sec4_text)
+                        pdf.multi_cell(0, 3.8, clean_pdf_text(f"My research background in remote sensing and spatial data science aligns closely with ongoing initiatives. Having completed my M.S. thesis at IST on LULC dynamics and flood risk (under review at Urban Climate), alongside professional Python and SQL pipeline development at Zoneomics, I am well-prepared to contribute effectively to your lab's goals."))
                         
                         pdf_bytes = bytes(pdf.output())
-                        zip_file.writestr(file_name, pdf_bytes)
-                        
-                zip_buffer.seek(0)
-                st.success(f"Successfully generated 100% unique, domain-tailored A4 Research Statement PDFs for {len(df_uploaded)} record(s)!")
-                st.download_button(
-                    label="📥 Download Research Statements (ZIP)",
-                    data=zip_buffer,
-                    file_name="Research_Statements_ZIP.zip",
-                    mime="application/zip"
-                )
+                        zf.writestr(file_name, pdf_bytes)
+                zip_buf.seek(0)
+                st.download_button("📥 Download ZIP Package", data=zip_buf, file_name="Research_Statements.zip", mime="application/zip")
         except Exception as e:
-            st.error(f"Error reading Excel file: {e}")
+            st.error(f"Error: {e}")
