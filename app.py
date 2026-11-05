@@ -47,28 +47,22 @@ def clean_raw_labels(text):
 
 def generate_dynamic_email_paragraph1(expertise, paper_title, paper_year, specific_finding):
     """
-    Generates EXACTLY ONE 2-sentence opening paragraph using the new strict guidelines:
-    - Sentence 1: Acknowledge research area, cite paper title with year, and highlight specific technical finding/methodology.
-    - Sentence 2: Connect finding/methodology to candidate's skills and applications.
+    Generates EXACTLY ONE 2-sentence paragraph matching the new requested structure:
+    - Sentence 1: "Your [Year] paper "[Paper Title]" interested me because you [insert specific finding/methodology used]."
+    - Sentence 2: "I work with multi-temporal satellite imagery and GIS-based land surface dynamics, and I would like to learn how [methodology from paper] are combined with spatial time-series data for long-term environmental monitoring."
     """
-    clean_exp = clean_raw_labels(expertise)
     clean_title = clean_raw_labels(paper_title)
     clean_finding = clean_raw_labels(specific_finding)
     year_str = str(paper_year).strip() if paper_year else "recent"
 
-    # Fallback default values
-    if not clean_exp:
-        clean_exp = "remote sensing and spatial data science"
+    # Fallback default values if fields are empty
     if not clean_title:
         clean_title = "spatiotemporal analysis and modeling"
     if not clean_finding:
-        clean_finding = "advanced spatial modeling techniques"
+        clean_finding = "applied advanced spatial modeling techniques"
 
-    # Sentence 1: Professor's Work
-    sentence1 = f"While reviewing your work in {clean_exp}—particularly your paper *{clean_title}* ({year_str})—I found your use of {clean_finding} particularly insightful."
-
-    # Sentence 2: Candidate Bridge & Connection
-    sentence2 = "This closely relates to my own background in multi-temporal satellite imagery, spatial modeling, and applying Python and GEE workflows to environmental dynamics."
+    sentence1 = f'Your {year_str} paper "{clean_title}" interested me because you {clean_finding}.'
+    sentence2 = f'I work with multi-temporal satellite imagery and GIS-based land surface dynamics, and I would like to learn how {clean_finding} are combined with spatial time-series data for long-term environmental monitoring.'
 
     return f"{sentence1} {sentence2}"
 
@@ -117,7 +111,6 @@ def parse_raw_professor_blocks(raw_text):
                 current_key = 'paper_title'
                 raw_val = re.sub(r'^(?:Paper Title & Year|Paper Title|Latest Published Papers|Key Publication|Publication|Paper)\s*:\s*', '', line_str, flags=re.IGNORECASE).strip()
                 
-                # Extract year in parentheses if present, e.g., Paper Title (2023)
                 year_match = re.search(r'\((\d{4})\)', raw_val)
                 if year_match:
                     prof['paper_year'] = year_match.group(1)
@@ -198,7 +191,6 @@ with tab1:
                 full_name = prof['name'].replace("Dr.", "").replace("Dr", "").replace("Prof.", "").replace("Prof", "").strip()
                 last_name = full_name.split()[-1] if full_name else "Professor"
                 
-                # Option 2 Concise Subject Format (Max 2-4 words)
                 raw_focus = clean_raw_labels(prof['expertise']) if prof['expertise'] else "Spatial Analytics"
                 words = raw_focus.split()
                 concise_keyword = " ".join(words[:3]) if len(words) > 3 else raw_focus
