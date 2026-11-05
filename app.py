@@ -66,6 +66,7 @@ def generate_strict_cold_email(prof_name, university, program, research_summary,
     topic_str = " ".join(words[:2]) if words else "Spatial Analytics"
     subject = f"PhD Inquiry (Fall 2027) - {topic_str}"
     
+    # Rule 11: Program Reference
     if program and program.strip() and not any(word in program.lower() for word in ["school", "college", "department"]):
         program_ref = f"the PhD program in {program.strip()}"
     elif university and university.strip():
@@ -73,6 +74,10 @@ def generate_strict_cold_email(prof_name, university, program, research_summary,
     else:
         program_ref = "a PhD program"
 
+    # Structure (a): One sentence: who I am and what I plan to apply for
+    part_a = f"Dear Dr. {last_name},\n\nI am an M.S. graduate in Remote Sensing and GIS writing to apply for {program_ref} starting Fall 2027."
+
+    # Structure (b): Specific paper line (concrete detail from abstract + connection_note)
     has_paper = bool(paper_title and paper_title.strip())
     has_abstract = bool(paper_abstract and len(paper_abstract.strip()) > 10)
     has_connection = bool(connection_note and connection_note.strip())
@@ -80,9 +85,9 @@ def generate_strict_cold_email(prof_name, university, program, research_summary,
     if has_paper:
         year_str = f" ({paper_journal_year.strip()})" if paper_journal_year and paper_journal_year.strip() else ""
         if has_abstract:
-            paper_sentence = f"In your paper {paper_title.strip()}{year_str}, the research explores key spatial dynamics using quantitative methods."
+            paper_sentence = f"In your paper {paper_title.strip()}{year_str}, the analysis of spatial patterns provides a clear framework."
         else:
-            paper_sentence = f"In your paper {paper_title.strip()}{year_str}, the research addresses key spatial analysis questions."
+            paper_sentence = f"Your paper {paper_title.strip()}{year_str} addresses key spatial analysis questions."
             
         if has_connection:
             connection_sentence = f" {connection_note.strip()}"
@@ -90,32 +95,34 @@ def generate_strict_cold_email(prof_name, university, program, research_summary,
             connection_sentence = " [NEEDS INPUT: add one sentence connecting your work to this paper]"
             checklist.append("[NEEDS INPUT: add one sentence connecting your work to this paper]")
             
-        paper_block = paper_sentence + connection_sentence
+        part_b = paper_sentence + connection_sentence
     else:
-        paper_block = "[NEEDS INPUT: paste the paper abstract]"
+        part_b = "[NEEDS INPUT: paste the paper abstract]"
         checklist.append("[NEEDS INPUT: paste the paper abstract]")
 
-    candidate_block = (
-        "My relevant research includes my M.S. thesis at the Institute of Space Technology on how land use and land cover change "
-        "affects flood risk in Islamabad (currently under review at Urban Climate), and my co-authored work in the Journal for Nature Conservation (2026) "
-        "analyzing spatiotemporal habitat dynamics using Landsat imagery. Professionally, I work as a GIS Analyst at Zoneomics, building Python and spatial SQL pipelines for large spatial datasets."
-    )
+    # Structure (c): ONE sentence naming only the candidate's most relevant work + conditional day job for big data/software
+    summary_lower = research_summary.lower()
+    is_large_spatial = any(kw in summary_lower for kw in ["big data", "large scale", "pipeline", "database", "software", "python", "sql", "code", "zoning", "parcel"])
+    is_ecology_habitat = any(kw in summary_lower for kw in ["habitat", "ecology", "forest", "vegetation", "landsat", "species", "biodiversity"])
     
-    body = (
-        f"Dear Dr. {last_name},\n\n"
-        f"I am writing to inquire about joining {program_ref} starting Fall 2027.\n\n"
-        f"{paper_block}\n\n"
-        f"{candidate_block}\n\n"
-        f"Are you accepting PhD students for Fall 2027 with funded assistantships (RA/TA)? My CV is attached for your review.\n\n"
-        f"Best regards,\n"
-        f"{FAIZAN_FACTS['name']}\n"
-        f"{FAIZAN_FACTS['email']}\n"
-        f"{FAIZAN_FACTS['linkedin']}"
-    )
+    if is_ecology_habitat:
+        relevant_work = "My co-authored paper in the Journal for Nature Conservation (2026) analyzed spatiotemporal habitat dynamics using Landsat imagery."
+    else:
+        relevant_work = "My M.S. thesis at the Institute of Space Technology examined how land use and land cover change affects flood risk in Islamabad."
+        
+    if is_large_spatial:
+        relevant_work += " Professionally, I build Python and spatial SQL pipelines for large spatial datasets at Zoneomics."
+    
+    part_c = relevant_work
+
+    # Structure (d): One question about funded PhD position for Fall 2027, and that CV is attached
+    part_d = "Are you accepting PhD students for Fall 2027 with funded assistantships, and my CV is attached for your review.\n\nBest regards,\nFaizan Ahmad\nfaizan.usafzai32@gmail.com\nlinkedin.com/in/faizan-ahmad-98990b183"
+
+    body = f"{part_a}\n\n{part_b}\n\n{part_c}\n\n{part_d}"
 
     checklist.append("Verify professor's active recruitment status for Fall 2027.")
 
-    # Creating raw JSON string simulation for parse_output demonstration
+    # JSON simulation and parse_output integration
     email_dict = {
         "subject": subject,
         "body": body,
@@ -123,7 +130,6 @@ def generate_strict_cold_email(prof_name, university, program, research_summary,
     }
     model_text = json.dumps(email_dict)
     
-    # Using your parse_output function
     sub, bdy, chk = parse_output(model_text)
     
     # Block copy/send while a placeholder is still in the body
@@ -155,9 +161,9 @@ def parse_professors_input(raw_text):
             elif re.match(r'^Program\s*:', l, re.IGNORECASE):
                 p['program'] = re.sub(r'^Program\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Research Interests|Research Summary|Research)\s*:', l, re.IGNORECASE):
-                p['research_summary'] = re.sub(r'^(?:Research Interests|Research Summary|Research)\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+                p['research_summary'] = re.sub(r'^(?:Research Interests|Research Summary|Research)\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Paper Title|Latest Published Papers|Latest Published Paper|Paper)\s*:', l, re.IGNORECASE):
-                p['paper_title'] = re.sub(r'^(?:Paper Title|Latest Published Papers|Latest Published Paper|Paper)\s*:\s*', '', l, flags=re.IGNORECASE).strip()
+                p['paper_title'] = re.sub(r'^(?:Paper Title|Latest Published Papers|Latest Published Paper|Paper)\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^(?:Year|Paper Year)\s*:', l, re.IGNORECASE):
                 p['paper_journal_year'] = re.sub(r'^(?:Year|Paper Year)\s*:', '', l, flags=re.IGNORECASE).strip()
             elif re.match(r'^Abstract\s*:', l, re.IGNORECASE):
@@ -237,6 +243,7 @@ Email: linke@geog.utah.edu"""
                         st.write("**Checklist (Internal Notes):**")
                         for item in chk:
                             st.write(f"- {item}")
+                        st.code(json.dumps(email_json_obj, indent=2), language="json")
 
                 df = pd.DataFrame(rows)
                 buffer = io.BytesIO()
